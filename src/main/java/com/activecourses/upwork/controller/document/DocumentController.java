@@ -2,9 +2,8 @@ package com.activecourses.upwork.controller.document;
 
 import com.activecourses.upwork.dto.ContractDocumentDTO;
 import com.activecourses.upwork.dto.ResponseDto;
-import com.activecourses.upwork.model.ContractDocument;
-import com.activecourses.upwork.repository.document.ContractDocumentRepository;
 import com.activecourses.upwork.service.document.DocumentService;
+import com.activecourses.upwork.service.document.DocumentService.DocumentDownloadInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +29,6 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
-    private final ContractDocumentRepository documentRepository;
 
     @Operation(summary = "Upload documento", description = "Faz upload de um documento para um contrato",
             security = @SecurityRequirement(name = "bearerAuth"))
@@ -59,10 +57,9 @@ public class DocumentController {
     @PreAuthorize("hasRole('CLIENT') or hasRole('LAWYER')")
     @GetMapping("/download/{documentId}")
     public ResponseEntity<Resource> downloadDocument(@PathVariable int documentId) {
-        ContractDocument doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("Document not found"));
+        DocumentDownloadInfo info = documentService.getDocumentDownloadInfo(documentId);
 
-        Path filePath = Paths.get(doc.getStoragePath());
+        Path filePath = Paths.get(info.storagePath());
         Resource resource = new FileSystemResource(filePath.toFile());
 
         if (!resource.exists()) {
@@ -70,9 +67,9 @@ public class DocumentController {
         }
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .contentType(MediaType.parseMediaType(info.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + doc.getFileName() + "\"")
+                        "attachment; filename=\"" + info.fileName() + "\"")
                 .body(resource);
     }
 

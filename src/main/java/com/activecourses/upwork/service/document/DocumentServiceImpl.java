@@ -134,6 +134,17 @@ public class DocumentServiceImpl implements DocumentService {
                 .orElseThrow(() -> new IllegalArgumentException("Document not found"));
     }
 
+    @Override
+    public DocumentDownloadInfo getDocumentDownloadInfo(int documentId) {
+        ContractDocument doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found"));
+        return new DocumentDownloadInfo(
+                doc.getStoragePath(),
+                doc.getContentType(),
+                doc.getFileName()
+        );
+    }
+
     private ContractDocumentDTO mapToDTO(ContractDocument document) {
         return ContractDocumentDTO.builder()
                 .documentId(document.getDocumentId())
