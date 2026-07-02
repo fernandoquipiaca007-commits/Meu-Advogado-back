@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: upwork_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: upwork
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - upwork-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: upwork_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_LOCATION: file:/app/resources/env.properties
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/upwork
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+    networks:
+      - upwork-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.upwork-backend.entrypoints=websecure"
+      - "traefik.http.routers.upwork-backend.rule=Host(`meubackend.duckdns.org`)"
+      - "traefik.http.routers.upwork-backend.tls=true"
+      - "traefik.http.routers.upwork-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.upwork-backend.loadbalancer.server.port=8080"
+
+volumes:
+  postgres_data:
+
+networks:
+  upwork-net:
+    driver: bridge
