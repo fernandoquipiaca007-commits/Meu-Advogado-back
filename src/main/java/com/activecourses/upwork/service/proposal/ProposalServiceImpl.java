@@ -8,6 +8,8 @@ import com.activecourses.upwork.repository.job.ProposalRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
 import com.activecourses.upwork.service.contract.ContractService;
+import com.activecourses.upwork.model.NotificationType;
+import com.activecourses.upwork.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class ProposalServiceImpl implements ProposalService {
     private final UserRepository userRepository;
     private final AuthService authService;
     private final ContractService contractService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -51,6 +54,18 @@ public class ProposalServiceImpl implements ProposalService {
                 .build();
 
         proposal = proposalRepository.save(proposal);
+
+        // Notify client about new proposal
+        User client = job.getClient();
+        notificationService.createNotification(
+                client.getId(),
+                NotificationType.PROPOSAL_RECEIVED,
+                "Nova proposta recebida",
+                lawyer.getFirstName() + " " + lawyer.getLastName() + " enviou uma proposta para: " + job.getTitle(),
+                "job",
+                job.getJobId()
+        );
+
         return mapToDTO(proposal);
     }
 
@@ -93,6 +108,17 @@ public class ProposalServiceImpl implements ProposalService {
         // Auto-create contract when proposal is accepted
         ContractDTO contract = contractService.createContract(proposalId);
 
+        // Notify lawyer that proposal was accepted
+        User lawyer = proposal.getLawyer();
+        notificationService.createNotification(
+                lawyer.getId(),
+                NotificationType.PROPOSAL_ACCEPTED,
+                "Proposta aceite",
+                "A sua proposta para " + proposal.getJob().getTitle() + " foi aceite. Um mandato foi criado.",
+                "contract",
+                contract.getContractId()
+        );
+
         ProposalDTO result = mapToDTO(proposal);
         result.setContractId(contract.getContractId());
         return result;
@@ -104,7 +130,20 @@ public class ProposalServiceImpl implements ProposalService {
         Proposal proposal = proposalRepository.findById(proposalId)
                 .orElseThrow(() -> new IllegalArgumentException("Proposal not found"));
         proposal.setStatus(ProposalStatus.Rejected);
-        return mapToDTO(proposalRepository.save(proposal));
+        proposal = proposalRepository.save(proposal);
+
+        // Notify lawyer that proposal was rejected
+        User lawyer = proposal.getLawyer();
+        notificationService.createNotification(
+                lawyer.getId(),
+                NotificationType.PROPOSAL_REJECTED,
+                "Proposta recusada",
+                "A sua proposta para " + proposal.getJob().getTitle() + " foi recusada.",
+                "job",
+                proposal.getJob().getJobId()
+        );
+
+        return mapToDTO(proposal);
     }
 
     @Override

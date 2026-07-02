@@ -7,6 +7,8 @@ import com.activecourses.upwork.repository.contract.ContractMilestoneRepository;
 import com.activecourses.upwork.repository.contract.ContractRepository;
 import com.activecourses.upwork.repository.job.ProposalRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.model.NotificationType;
+import com.activecourses.upwork.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class ContractServiceImpl implements ContractService {
     private final ContractMilestoneRepository milestoneRepository;
     private final ProposalRepository proposalRepository;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -60,6 +63,25 @@ public class ContractServiceImpl implements ContractService {
                 .build();
 
         contract = contractRepository.save(contract);
+
+        // Notify both parties about new contract
+        notificationService.createNotification(
+                client.getId(),
+                NotificationType.CONTRACT_CREATED,
+                "Mandato criado",
+                "O mandato para " + job.getTitle() + " foi criado com " + lawyer.getFirstName() + " " + lawyer.getLastName(),
+                "contract",
+                contract.getContractId()
+        );
+        notificationService.createNotification(
+                lawyer.getId(),
+                NotificationType.CONTRACT_CREATED,
+                "Mandato criado",
+                "O mandato para " + job.getTitle() + " foi criado com " + client.getFirstName() + " " + client.getLastName(),
+                "contract",
+                contract.getContractId()
+        );
+
         return mapToDTO(contract);
     }
 
@@ -108,7 +130,22 @@ public class ContractServiceImpl implements ContractService {
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
         contract.setStatus(ContractStatus.Completed);
         contract.setUpdatedAt(LocalDateTime.now());
-        return mapToDTO(contractRepository.save(contract));
+        contract = contractRepository.save(contract);
+
+        // Notify the other party
+        Integer currentUserId = authService.getCurrentUserId();
+        User otherParty = currentUserId != null && currentUserId.equals(contract.getClient().getId())
+                ? contract.getLawyer() : contract.getClient();
+        notificationService.createNotification(
+                otherParty.getId(),
+                NotificationType.CONTRACT_COMPLETED,
+                "Mandato concluído",
+                "O mandato " + contract.getTitle() + " foi marcado como concluído.",
+                "contract",
+                contract.getContractId()
+        );
+
+        return mapToDTO(contract);
     }
 
     @Override
@@ -118,7 +155,22 @@ public class ContractServiceImpl implements ContractService {
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
         contract.setStatus(ContractStatus.Terminated);
         contract.setUpdatedAt(LocalDateTime.now());
-        return mapToDTO(contractRepository.save(contract));
+        contract = contractRepository.save(contract);
+
+        // Notify the other party
+        Integer currentUserId = authService.getCurrentUserId();
+        User otherParty = currentUserId != null && currentUserId.equals(contract.getClient().getId())
+                ? contract.getLawyer() : contract.getClient();
+        notificationService.createNotification(
+                otherParty.getId(),
+                NotificationType.CONTRACT_TERMINATED,
+                "Mandato encerrado",
+                "O mandato " + contract.getTitle() + " foi encerrado.",
+                "contract",
+                contract.getContractId()
+        );
+
+        return mapToDTO(contract);
     }
 
     @Override
@@ -139,6 +191,19 @@ public class ContractServiceImpl implements ContractService {
         milestone.setStatus(MilestoneStatus.Completed);
         milestone.setCompletedAt(LocalDateTime.now());
         milestone = milestoneRepository.save(milestone);
+
+        // Notify client that milestone was completed
+        Contract contract = milestone.getContract();
+        User client = contract.getClient();
+        notificationService.createNotification(
+                client.getId(),
+                NotificationType.MILESTONE_COMPLETED,
+                "Etapa concluída",
+                "A etapa \"" + milestone.getTitle() + "\" do mandato " + contract.getTitle() + " foi concluída.",
+                "contract",
+                contract.getContractId()
+        );
+
         return mapMilestoneToDTO(milestone);
     }
 

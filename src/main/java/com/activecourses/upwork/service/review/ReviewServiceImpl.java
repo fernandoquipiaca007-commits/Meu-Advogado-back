@@ -6,6 +6,8 @@ import com.activecourses.upwork.repository.contract.ContractRepository;
 import com.activecourses.upwork.repository.review.ReviewRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.model.NotificationType;
+import com.activecourses.upwork.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ContractRepository contractRepository;
     private final UserRepository userRepository;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -76,6 +79,18 @@ public class ReviewServiceImpl implements ReviewService {
                 .build();
 
         review = reviewRepository.save(review);
+
+        // Notify reviewee about new review
+        notificationService.createNotification(
+                reviewee.getId(),
+                NotificationType.REVIEW_RECEIVED,
+                "Nova avaliação recebida",
+                reviewer.getFirstName() + " " + reviewer.getLastName() + " avaliou-o com " + rating + " estrelas"
+                        + (comment != null && !comment.isEmpty() ? ": \"" + comment + "\"" : "."),
+                "contract",
+                contract.getContractId()
+        );
+
         return mapToDTO(review);
     }
 

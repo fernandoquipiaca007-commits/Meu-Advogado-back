@@ -5,6 +5,8 @@ import com.activecourses.upwork.model.*;
 import com.activecourses.upwork.repository.contract.ContractMilestoneRepository;
 import com.activecourses.upwork.repository.payment.PaymentRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.model.NotificationType;
+import com.activecourses.upwork.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final ContractMilestoneRepository milestoneRepository;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -54,6 +57,19 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         payment = paymentRepository.save(payment);
+
+        // Notify lawyer about payment
+        User lawyer = contract.getLawyer();
+        notificationService.createNotification(
+                lawyer.getId(),
+                NotificationType.PAYMENT_RECEIVED,
+                "Pagamento recebido",
+                "Recebeu um pagamento de " + contract.getClient().getFirstName() + " " + contract.getClient().getLastName()
+                        + " referente a: " + milestone.getTitle(),
+                "contract",
+                contract.getContractId()
+        );
+
         return mapToDTO(payment);
     }
 
