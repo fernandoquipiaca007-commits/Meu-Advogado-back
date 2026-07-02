@@ -108,6 +108,13 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentDTO completePayment(int paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+
+        // Ownership check: only the client who owns the contract can complete payment
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null && !currentUserId.equals(payment.getContract().getClient().getId())) {
+            throw new SecurityException("You can only complete payments for your own contracts");
+        }
+
         payment.setStatus(PaymentStatus.Completed);
         payment = paymentRepository.save(payment);
         return mapToDTO(payment);

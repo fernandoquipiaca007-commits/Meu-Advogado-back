@@ -128,6 +128,17 @@ public class ContractServiceImpl implements ContractService {
     public ContractDTO completeContract(int contractId) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
+
+        // Ownership check: only participants can complete
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null) {
+            boolean isParticipant = currentUserId.equals(contract.getClient().getId())
+                    || currentUserId.equals(contract.getLawyer().getId());
+            if (!isParticipant) {
+                throw new SecurityException("You can only complete contracts you participate in");
+            }
+        }
+
         contract.setStatus(ContractStatus.Completed);
         contract.setUpdatedAt(LocalDateTime.now());
         contract = contractRepository.save(contract);
@@ -153,6 +164,13 @@ public class ContractServiceImpl implements ContractService {
     public ContractDTO terminateContract(int contractId) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
+
+        // Ownership check: only the client can terminate
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null && !currentUserId.equals(contract.getClient().getId())) {
+            throw new SecurityException("You can only terminate your own contracts");
+        }
+
         contract.setStatus(ContractStatus.Terminated);
         contract.setUpdatedAt(LocalDateTime.now());
         contract = contractRepository.save(contract);
@@ -188,6 +206,18 @@ public class ContractServiceImpl implements ContractService {
     public ContractMilestoneDTO completeMilestone(int milestoneId) {
         ContractMilestone milestone = milestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new IllegalArgumentException("Milestone not found"));
+
+        // Ownership check: only participants can complete milestones
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null) {
+            Contract contract = milestone.getContract();
+            boolean isParticipant = currentUserId.equals(contract.getClient().getId())
+                    || currentUserId.equals(contract.getLawyer().getId());
+            if (!isParticipant) {
+                throw new SecurityException("You can only complete milestones in contracts you participate in");
+            }
+        }
+
         milestone.setStatus(MilestoneStatus.Completed);
         milestone.setCompletedAt(LocalDateTime.now());
         milestone = milestoneRepository.save(milestone);

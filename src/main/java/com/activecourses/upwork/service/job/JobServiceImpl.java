@@ -80,6 +80,12 @@ public class JobServiceImpl implements JobService {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
 
+        // Ownership check: only the job owner (or admin handled in controller) can update
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null && !currentUserId.equals(job.getClient().getId())) {
+            throw new SecurityException("You can only update your own legal cases");
+        }
+
         job.setTitle(jobDTO.getTitle());
         job.setDescription(jobDTO.getDescription());
         job.setBudget(jobDTO.getBudget());
@@ -112,6 +118,13 @@ public class JobServiceImpl implements JobService {
     public Job archiveJob(int jobId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
+
+        // Ownership check: only the job owner can archive
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null && !currentUserId.equals(job.getClient().getId())) {
+            throw new SecurityException("You can only archive your own legal cases");
+        }
+
         job.setArchived(true);
         job.setArchivedAt(LocalDateTime.now());
         job.setStatus(JobStatus.Archived);
@@ -123,6 +136,13 @@ public class JobServiceImpl implements JobService {
     public Job closeJob(int jobId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
+
+        // Ownership check: only the job owner can close
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId != null && !currentUserId.equals(job.getClient().getId())) {
+            throw new SecurityException("You can only close your own legal cases");
+        }
+
         job.setStatus(JobStatus.Completed);
         job.setClosedAt(LocalDateTime.now());
         return jobRepository.save(job);

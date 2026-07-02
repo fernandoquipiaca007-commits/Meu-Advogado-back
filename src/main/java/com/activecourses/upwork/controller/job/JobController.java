@@ -66,7 +66,7 @@ public class JobController {
 
     @Operation(summary = "Atualizar caso jurídico", description = "Update an existing legal case",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT') or hasRole('LAWYER') or hasRole('FIRM')")
+    @PreAuthorize("hasRole('CLIENT') or hasRole('LAWYER') or hasRole('FIRM')")
     @PutMapping("/{jobId}")
     public ResponseEntity<ResponseDto> updateJob(@PathVariable int jobId, @Valid @RequestBody JobDTO jobDTO) {
         Job updatedJob = jobService.updateJob(jobId, jobDTO);
@@ -75,7 +75,7 @@ public class JobController {
 
     @Operation(summary = "Arquivar caso", description = "Archive a legal case",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    @PreAuthorize("hasRole('CLIENT')")
     @PostMapping("/{jobId}/archive")
     public ResponseEntity<ResponseDto> archiveJob(@PathVariable int jobId) {
         Job archivedJob = jobService.archiveJob(jobId);
@@ -84,7 +84,7 @@ public class JobController {
 
     @Operation(summary = "Fechar caso", description = "Mark a legal case as completed",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    @PreAuthorize("hasRole('CLIENT')")
     @PostMapping("/{jobId}/close")
     public ResponseEntity<ResponseDto> closeJob(@PathVariable int jobId) {
         Job closedJob = jobService.closeJob(jobId);

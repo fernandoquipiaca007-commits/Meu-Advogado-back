@@ -59,7 +59,7 @@ public class PaymentController {
 
     @Operation(summary = "Confirmar pagamento", description = "Marca pagamento como concluído",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('CLIENT') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CLIENT')")
     @PostMapping("/{paymentId}/complete")
     public ResponseEntity<ResponseDto> completePayment(@PathVariable int paymentId) {
         PaymentDTO payment = paymentService.completePayment(paymentId);

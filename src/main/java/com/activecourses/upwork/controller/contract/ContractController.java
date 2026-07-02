@@ -50,7 +50,7 @@ public class ContractController {
 
     @Operation(summary = "Completar contrato", description = "Marca contrato como concluído",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('CLIENT') or hasRole('LAWYER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CLIENT') or hasRole('LAWYER')")
     @PostMapping("/{contractId}/complete")
     public ResponseEntity<ResponseDto> completeContract(@PathVariable int contractId) {
         ContractDTO contract = contractService.completeContract(contractId);
@@ -59,7 +59,7 @@ public class ContractController {
 
     @Operation(summary = "Encerrar contrato", description = "Encerra contrato antecipadamente",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('CLIENT') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CLIENT')")
     @PostMapping("/{contractId}/terminate")
     public ResponseEntity<ResponseDto> terminateContract(@PathVariable int contractId) {
         ContractDTO contract = contractService.terminateContract(contractId);
@@ -77,7 +77,7 @@ public class ContractController {
 
     @Operation(summary = "Completar milestone", description = "Marca uma etapa como concluída",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('CLIENT') or hasRole('LAWYER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CLIENT') or hasRole('LAWYER')")
     @PostMapping("/milestones/{milestoneId}/complete")
     public ResponseEntity<ResponseDto> completeMilestone(@PathVariable int milestoneId) {
         ContractMilestoneDTO milestone = contractService.completeMilestone(milestoneId);
