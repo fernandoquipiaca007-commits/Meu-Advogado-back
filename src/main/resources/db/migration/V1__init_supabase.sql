@@ -348,6 +348,33 @@ INSERT INTO roles (name) VALUES
     ('ROLE_FIRM')
 ON CONFLICT (name) DO NOTHING;
 
+-- 3.2. Especialidades padrão
+INSERT INTO specialties (name) VALUES
+    ('Direito Civil'),
+    ('Direito Penal'),
+    ('Direito Trabalhista'),
+    ('Direito Tributário'),
+    ('Direito Empresarial'),
+    ('Direito de Família'),
+    ('Direito do Consumidor'),
+    ('Direito Imobiliário'),
+    ('Direito Digital'),
+    ('Direito Previdenciário'),
+    ('Direito Administrativo'),
+    ('Direito Ambiental')
+ON CONFLICT (name) DO NOTHING;
+
+-- 3.3. Skills padrão
+INSERT INTO skills (skill_name) VALUES 
+    ('Java'),
+    ('Spring Boot'),
+    ('Angular'),
+    ('PostgreSQL'),
+    ('Contratos'),
+    ('Petições'),
+    ('Consultoria')
+ON CONFLICT (skill_name) DO NOTHING;
+
 -- 3.2. Admin padrão
 -- NOTA: A senha abaixo é um bcrypt hash de 'admin123'
 -- O backend cria o admin automaticamente via CommandLineRunner
