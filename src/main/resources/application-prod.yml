@@ -1,6 +1,9 @@
 spring:
   datasource:
-    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/railway}"
+    # Supabase PostgreSQL connection
+    # Get these from Supabase Dashboard > Project Settings > Database > Connection string
+    # JDBC format: jdbc:postgresql://db.<project-ref>.supabase.co:6543/postgres?sslmode=require
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres}"
     username: "${SPRING_DATASOURCE_USERNAME:postgres}"
     password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     driver-class-name: "org.postgresql.Driver"
