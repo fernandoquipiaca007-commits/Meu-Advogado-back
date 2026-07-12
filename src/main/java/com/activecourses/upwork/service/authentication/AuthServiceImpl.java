@@ -14,6 +14,7 @@ import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.repository.role.RoleRepository;
 import com.activecourses.upwork.config.security.jwt.JwtService;
 
+import com.activecourses.upwork.exception.EmailAlreadyExistsException;
 import com.activecourses.upwork.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +57,12 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final AuditService auditService;
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
+
+    @Value("${BACKEND_URL:http://localhost:8080}")
+    private String backendUrl;
+
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
 
     @Override
     public CurrentUserDto getCurrentUserWithRoles() {
@@ -120,9 +128,18 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public RegistrationResponseDto registerUser(RegistrationRequestDto registrationRequestDto) {
         logger.info("Registering user with email: {}", registrationRequestDto.getEmail());
+
+        // Check for duplicate email before saving
+        if (userRepository.findByEmail(registrationRequestDto.getEmail()).isPresent()) {
+            throw new EmailAlreadyExistsException("Email already exists: " + registrationRequestDto.getEmail());
+        }
+
         User user = userMapper.mapFrom(registrationRequestDto);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setUserProfile(new UserProfile());
+        UserProfile profile = new UserProfile();
+        profile.setCountry("BR");
+        profile.setUser(user);
+        user.setUserProfile(profile);
         userRepository.save(user);
 
         return RegistrationResponseDto
@@ -238,7 +255,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void sendVerificationEmail(User user) {
         logger.info("Sending verification email to: {}", user.getEmail());
-        String verificationLink = "http://localhost:8080/api/users/verify?token="
+        String verificationLink = backendUrl + "/api/users/verify?token="
                                   + user.getVerificationToken();
 
         SimpleMailMessage message = new SimpleMailMessage();
@@ -279,7 +296,7 @@ public class AuthServiceImpl implements AuthService {
             userRepository.save(user);
 
             // Send reset email
-            String resetLink = "https://meu-advogado-front.vercel.app/reset-password/" + resetToken;
+            String resetLink = frontendUrl + "/reset-password/" + resetToken;
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(user.getEmail());

@@ -112,7 +112,7 @@ public class JwtService {
                 .maxAge(maxAge)
                 .httpOnly(true)
                 .secure(true) // Enable only if using HTTPS
-                .sameSite("Strict")
+                .sameSite("None") // frontend (Vercel) e backend (Railway) são origens diferentes (cross-site)
                 .build();
     }
 

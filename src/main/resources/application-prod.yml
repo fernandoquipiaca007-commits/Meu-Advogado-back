@@ -9,6 +9,9 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 5
       idle-timeout: 600000
+      data-source-properties:
+        sslmode: require
+        ssl: true
   jpa:
     hibernate:
       ddl-auto: validate
