@@ -23,12 +23,12 @@ application:
     jwt:
       secret_key: ${application.security.jwt.secret_key}
       expiration: ${application.security.jwt.expiration}
-      refresh-token:
-        expiration: ${application.security.jwt.refresh_token.expiration}
+      refresh_token:
+        expiration: "${JWT_REFRESH_EXPIRES_IN:7200000}"
       cookie:
-        jwt_cookie_name: ${application.security.jwt.cookie.jwt_cookie_name}
-        jwt_refresh_cookie_name: ${application.security.jwt.cookie.jwt_refresh_cookie_name}
-        max_age: ${application.security.jwt.cookie.max_age}
+        jwt_cookie_name: "${JWT_COOKIE_NAME:jwt_token}"
+        jwt_refresh_cookie_name: "${JWT_REFRESH_COOKIE_NAME:jwt_refresh_token}"
+        max_age: "${JWT_COOKIE_MAX_AGE:86400}"
 
 springdoc:
   api-docs:

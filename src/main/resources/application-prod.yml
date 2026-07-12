@@ -33,7 +33,7 @@ application:
     jwt:
       secret_key: "${JWT_SECRET:default-dev-secret-key-change-in-railway-env-32chars}"
       expiration: "${JWT_EXPIRES_IN:3600000}"
-      refresh-token:
+      refresh_token:
         expiration: "${JWT_REFRESH_EXPIRES_IN:7200000}"
       cookie:
         jwt_cookie_name: "${JWT_COOKIE_NAME:jwt_token}"
