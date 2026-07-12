@@ -144,7 +144,6 @@ public class ContractServiceImpl implements ContractService {
         contract = contractRepository.save(contract);
 
         // Notify the other party
-        Integer currentUserId = authService.getCurrentUserId();
         User otherParty = currentUserId != null && currentUserId.equals(contract.getClient().getId())
                 ? contract.getLawyer() : contract.getClient();
         notificationService.createNotification(
@@ -176,7 +175,6 @@ public class ContractServiceImpl implements ContractService {
         contract = contractRepository.save(contract);
 
         // Notify the other party
-        Integer currentUserId = authService.getCurrentUserId();
         User otherParty = currentUserId != null && currentUserId.equals(contract.getClient().getId())
                 ? contract.getLawyer() : contract.getClient();
         notificationService.createNotification(

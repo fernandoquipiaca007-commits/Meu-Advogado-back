@@ -43,11 +43,6 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "Login",
-            description = "Login",
-            security = @SecurityRequirement(name = "")
-    )
-    @Operation(
             summary = "Get current user",
             description = "Retrieve the currently authenticated user's information and roles",
             security = @SecurityRequirement(name = "bearerAuth")

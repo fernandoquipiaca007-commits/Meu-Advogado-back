@@ -1,5 +1,6 @@
 package com.activecourses.upwork.dto.user;
 
+import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
