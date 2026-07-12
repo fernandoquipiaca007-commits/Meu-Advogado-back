@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: "${SPRING_DATASOURCE_URL}"
-    username: "${SPRING_DATASOURCE_USERNAME}"
-    password: "${SPRING_DATASOURCE_PASSWORD}"
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/railway}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     driver-class-name: "org.postgresql.Driver"
     hikari:
       connection-timeout: 30000
@@ -28,7 +28,7 @@ spring:
 application:
   security:
     jwt:
-      secret_key: "${JWT_SECRET}"
+      secret_key: "${JWT_SECRET:default-dev-secret-key-change-in-railway-env-32chars}"
       expiration: "${JWT_EXPIRES_IN:3600000}"
       refresh-token:
         expiration: "${JWT_REFRESH_EXPIRES_IN:7200000}"
