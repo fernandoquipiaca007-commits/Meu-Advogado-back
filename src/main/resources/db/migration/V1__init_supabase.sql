@@ -345,8 +345,7 @@ INSERT INTO roles (name) VALUES
     ('ROLE_ADMIN'),
     ('ROLE_CLIENT'),
     ('ROLE_LAWYER'),
-    ('ROLE_FIRM'),
-    ('ROLE_FREELANCER')
+    ('ROLE_FIRM')
 ON CONFLICT (name) DO NOTHING;
 
 -- 3.2. Especialidades padrão
