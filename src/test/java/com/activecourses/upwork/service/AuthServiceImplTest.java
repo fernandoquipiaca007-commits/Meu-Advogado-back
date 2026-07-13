@@ -88,7 +88,7 @@ class AuthServiceImplTest {
         when(userMapper.mapFrom(any(RegistrationRequestDto.class))).thenReturn(user);
         when(passwordEncoder.encode(any(String.class))).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(userRepository.findByEmail("am0103738@gmail.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("am0103738@gmail.com")).thenReturn(Optional.empty());
 
         authService.registerUser(registrationRequestDto);
 
