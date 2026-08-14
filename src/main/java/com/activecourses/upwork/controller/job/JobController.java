@@ -57,11 +57,15 @@ public class JobController {
 
     @Operation(summary = "Criar caso jurídico", description = "Creates a new legal case",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT') or hasRole('LAWYER') or hasRole('FIRM') or hasRole('FREELANCER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT') or hasRole('LAWYER') or hasRole('FIRM') or hasRole('FREELANCER') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_CLIENT') or hasAuthority('ROLE_LAWYER') or hasAuthority('ROLE_FIRM') or hasAuthority('ROLE_FREELANCER') or isAuthenticated()")
     @PostMapping("/post")
     public ResponseEntity<ResponseDto> createJob(@Valid @RequestBody JobDTO jobDTO) {
-        Job createdJob = jobService.createJob(jobDTO);
-        return buildResponse(HttpStatus.CREATED, true, jobMapper.mapTo(createdJob), null);
+        try {
+            Job createdJob = jobService.createJob(jobDTO);
+            return buildResponse(HttpStatus.CREATED, true, jobMapper.mapTo(createdJob), null);
+        } catch (Exception e) {
+            return buildResponse(HttpStatus.BAD_REQUEST, false, null, "Failed to create job: " + e.getMessage());
+        }
     }
 
     @Operation(summary = "Atualizar caso jurídico", description = "Update an existing legal case",

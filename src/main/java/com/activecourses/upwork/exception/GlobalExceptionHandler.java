@@ -79,6 +79,19 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ResponseDto> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ResponseDto
+                        .builder()
+                        .status(HttpStatus.FORBIDDEN)
+                        .success(false)
+                        .error("Access denied: " + ex.getMessage())
+                        .build()
+                );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseDto> handleGenericException(Exception ex) {
         return ResponseEntity
