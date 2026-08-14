@@ -29,6 +29,19 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(ConflictBlockedException.class)
+    public ResponseEntity<ResponseDto> handleConflictBlockedException(ConflictBlockedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ResponseDto
+                        .builder()
+                        .status(HttpStatus.CONFLICT)
+                        .success(false)
+                        .error(ex.getMessage() != null ? ex.getMessage() : "Conflito de interesses ou impedimento ético detectado nos termos do Código de Ética da OAB.")
+                        .build()
+                );
+    }
+
     @ExceptionHandler(DuplicateProposalException.class)
     public ResponseEntity<ResponseDto> handleDuplicateProposalException(DuplicateProposalException ex) {
         return ResponseEntity

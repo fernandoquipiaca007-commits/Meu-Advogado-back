@@ -1,13 +1,17 @@
 package com.activecourses.upwork.controller.contract;
 
+import com.activecourses.upwork.dto.AcceptContractRequestDto;
 import com.activecourses.upwork.dto.ContractDTO;
 import com.activecourses.upwork.dto.ContractMilestoneDTO;
+import com.activecourses.upwork.dto.ContractTimelineDto;
 import com.activecourses.upwork.dto.ResponseDto;
 import com.activecourses.upwork.service.authentication.AuthService;
 import com.activecourses.upwork.service.contract.ContractService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +21,24 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Mandatos", description = "Gestão de Contratos/Mandatos Jurídicos")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/contracts/")
+@RequestMapping("/api/contracts")
 public class ContractController {
 
     private final ContractService contractService;
     private final AuthService authService;
 
-    @Operation(summary = "Criar contrato", description = "Cria um contrato a partir de uma proposta aceite",
+    @Operation(summary = "Aceitar proposta e formalizar contrato atomicamente", description = "Executa a contratação jurídica atômica com validação de pré-condições, rejeição de concorrentes e recibo digital SHA-256",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasRole('CLIENT') or hasRole('ADMIN')")
+    @PostMapping("/accept-and-contract")
+    public ResponseEntity<ResponseDto> acceptAndContract(
+            @Valid @RequestBody AcceptContractRequestDto request,
+            HttpServletRequest httpRequest) {
+        ContractDTO contract = contractService.acceptAndContract(request, httpRequest);
+        return buildResponse(HttpStatus.CREATED, true, contract, null);
+    }
+
+    @Operation(summary = "Criar contrato", description = "Cria um contrato a partir de uma proposta aceite (legado)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @PreAuthorize("hasRole('CLIENT') or hasRole('ADMIN')")
     @PostMapping("/create/{proposalId}")
@@ -46,6 +61,14 @@ public class ContractController {
         return contractService.getContractById(contractId)
                 .map(c -> buildResponse(HttpStatus.OK, true, c, null))
                 .orElse(buildResponse(HttpStatus.NOT_FOUND, false, null, "Contract not found"));
+    }
+
+    @Operation(summary = "Linha do tempo do contrato", description = "Retorna os eventos cronológicos consolidados do contrato para trilha de auditoria",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/{contractId}/timeline")
+    public ResponseEntity<ResponseDto> getContractTimeline(@PathVariable int contractId) {
+        ContractTimelineDto timeline = contractService.getContractTimeline(contractId);
+        return buildResponse(HttpStatus.OK, true, timeline, null);
     }
 
     @Operation(summary = "Completar contrato", description = "Marca contrato como concluído",

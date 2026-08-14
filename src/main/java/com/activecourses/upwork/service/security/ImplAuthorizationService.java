@@ -3,6 +3,7 @@ package com.activecourses.upwork.service.security;
 import com.activecourses.upwork.model.*;
 import com.activecourses.upwork.repository.admin.AdminAccessLogRepository;
 import com.activecourses.upwork.repository.contract.ContractRepository;
+import com.activecourses.upwork.repository.document.SecureDocumentRepository;
 import com.activecourses.upwork.repository.job.JobRepository;
 import com.activecourses.upwork.repository.job.ProposalRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,7 +23,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
-@RequiredArgsConstructor
 public class ImplAuthorizationService implements AuthorizationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImplAuthorizationService.class);
@@ -31,6 +32,32 @@ public class ImplAuthorizationService implements AuthorizationService {
     private final JobRepository jobRepository;
     private final ProposalRepository proposalRepository;
     private final AdminAccessLogRepository adminAccessLogRepository;
+    private final SecureDocumentRepository secureDocumentRepository;
+
+    public ImplAuthorizationService(
+            UserRepository userRepository,
+            ContractRepository contractRepository,
+            JobRepository jobRepository,
+            ProposalRepository proposalRepository,
+            AdminAccessLogRepository adminAccessLogRepository) {
+        this(userRepository, contractRepository, jobRepository, proposalRepository, adminAccessLogRepository, null);
+    }
+
+    @Autowired
+    public ImplAuthorizationService(
+            UserRepository userRepository,
+            ContractRepository contractRepository,
+            JobRepository jobRepository,
+            ProposalRepository proposalRepository,
+            AdminAccessLogRepository adminAccessLogRepository,
+            SecureDocumentRepository secureDocumentRepository) {
+        this.userRepository = userRepository;
+        this.contractRepository = contractRepository;
+        this.jobRepository = jobRepository;
+        this.proposalRepository = proposalRepository;
+        this.adminAccessLogRepository = adminAccessLogRepository;
+        this.secureDocumentRepository = secureDocumentRepository;
+    }
 
     @Override
     public void enforceVerifiedLawyer(Integer lawyerId) {
@@ -144,6 +171,70 @@ public class ImplAuthorizationService implements AuthorizationService {
     @Override
     public void enforceNegotiationParticipant(Integer proposalId, Integer userId) {
         enforceProposalOwnerOrClient(proposalId, userId);
+    }
+
+    @Override
+    public void enforceDocumentAccess(Long documentId, Integer userId) {
+        if (documentId == null) {
+            throw new IllegalArgumentException("Document ID cannot be null");
+        }
+        SecureDocument doc = secureDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Secure document not found with id: " + documentId));
+        enforceDocumentAccess(doc, userId);
+    }
+
+    @Override
+    public void enforceDocumentAccess(SecureDocument doc, Integer userId) {
+        if (userId == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+
+        if (Boolean.TRUE.equals(doc.getIsDeleted())) {
+            throw new AccessDeniedException("Document has been deleted.");
+        }
+
+        if (doc.getVirusScanStatus() == VirusScanStatus.INFECTED) {
+            throw new AccessDeniedException("Document is flagged as infected and cannot be accessed.");
+        }
+
+        if (isAdmin()) {
+            return;
+        }
+
+        // 1. Owner of the document
+        if (doc.getOwner() != null && userId.equals(doc.getOwner().getId())) {
+            return;
+        }
+
+        // 2. Contract participant
+        if (doc.getContract() != null) {
+            Contract contract = doc.getContract();
+            boolean isParticipant = (contract.getClient() != null && userId.equals(contract.getClient().getId()))
+                    || (contract.getLawyer() != null && userId.equals(contract.getLawyer().getId()));
+            if (isParticipant) {
+                return;
+            }
+        }
+
+        // 3. Job owner or assigned lawyer for the job
+        if (doc.getJob() != null) {
+            Job job = doc.getJob();
+            if (job.getClient() != null && userId.equals(job.getClient().getId())) {
+                return;
+            }
+            // Check if user has an accepted proposal for this job
+            boolean isAssignedLawyer = proposalRepository.findByJobJobId(job.getJobId()).stream()
+                    .anyMatch(p -> p.getLawyer() != null && userId.equals(p.getLawyer().getId()) && p.getStatus() == ProposalStatus.Accepted);
+            if (isAssignedLawyer) {
+                return;
+            }
+            // Check if document is PUBLIC and user is a verified lawyer
+            if (doc.getClassification() == DocumentClassification.PUBLIC) {
+                return;
+            }
+        }
+
+        throw new AccessDeniedException("User " + userId + " does not have permission to access document " + (doc.getId() != null ? doc.getId() : ""));
     }
 
     @Override

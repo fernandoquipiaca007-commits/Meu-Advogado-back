@@ -69,8 +69,25 @@ public class Contract {
 
     private LocalDateTime updatedAt;
 
+    @Column(name = "conflict_status", length = 50)
+    @Builder.Default
+    private String conflictStatus = "CLEAR";
+
+    @Column(name = "terms_version", length = 50)
+    @Builder.Default
+    private String termsVersion = "v1.0";
+
+    @Column(name = "signed_at")
+    private LocalDateTime signedAt;
+
+    @Column(name = "hash_receipt", length = 128)
+    private String hashReceipt;
+
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContractMilestone> milestones;
+
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ContractSignature> signatures;
 
     @PrePersist
     protected void onCreate() {

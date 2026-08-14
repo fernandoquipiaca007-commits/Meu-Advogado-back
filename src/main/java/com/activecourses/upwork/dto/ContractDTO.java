@@ -32,6 +32,11 @@ public class ContractDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private ContractStatus status;
+    private String conflictStatus;
+    private String termsVersion;
+    private LocalDateTime signedAt;
+    private String hashReceipt;
     private LocalDateTime createdAt;
     private List<ContractMilestoneDTO> milestones;
+    private List<ContractSignatureDto> signatures;
 }

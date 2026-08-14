@@ -17,6 +17,10 @@ public interface AuthorizationService {
 
     void enforceNegotiationParticipant(Integer proposalId, Integer userId);
 
+    void enforceDocumentAccess(Long documentId, Integer userId);
+
+    void enforceDocumentAccess(com.activecourses.upwork.model.SecureDocument document, Integer userId);
+
     AdminAccessLog logAdminAccess(Integer adminUserId,
                                   Integer targetUserId,
                                   String resourceType,

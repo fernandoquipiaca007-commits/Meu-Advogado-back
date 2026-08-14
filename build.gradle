@@ -70,4 +70,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    binaryResultsDirectory.set(file("${layout.buildDirectory.get()}/test-results-bin-${System.currentTimeMillis()}"))
 }
+
