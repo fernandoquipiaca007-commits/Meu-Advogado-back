@@ -4,7 +4,7 @@ import com.activecourses.upwork.model.*;
 import com.activecourses.upwork.repository.delivery.DeliveryRepository;
 import com.activecourses.upwork.repository.delivery.DisputeRepository;
 import com.activecourses.upwork.repository.delivery.CancellationRequestRepository;
-import com.activecourses.upwork.repository.delivery.ReviewRepository;
+import com.activecourses.upwork.repository.review.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

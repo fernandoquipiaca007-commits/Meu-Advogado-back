@@ -13,4 +13,7 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     List<Review> findByReviewerId(int reviewerId);
     List<Review> findByRevieweeId(int revieweeId);
     Optional<Review> findByContractContractIdAndReviewerId(int contractId, int reviewerId);
+    // Phase 6 — blind review: check if a specific reviewer→reviewee pair already submitted
+    boolean existsByContractContractIdAndReviewerIdAndRevieweeId(
+            Integer contractId, Integer reviewerId, Integer revieweeId);
 }
