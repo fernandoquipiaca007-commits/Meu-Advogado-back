@@ -42,6 +42,19 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(FeatureDisabledException.class)
+    public ResponseEntity<ResponseDto> handleFeatureDisabledException(FeatureDisabledException ex) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ResponseDto
+                        .builder()
+                        .status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .success(false)
+                        .error(ex.getMessage())
+                        .build()
+                );
+    }
+
     @ExceptionHandler(DuplicateProposalException.class)
     public ResponseEntity<ResponseDto> handleDuplicateProposalException(DuplicateProposalException ex) {
         return ResponseEntity

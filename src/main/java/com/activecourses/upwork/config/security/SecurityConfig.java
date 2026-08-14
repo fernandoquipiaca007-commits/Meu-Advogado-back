@@ -43,7 +43,8 @@ public class SecurityConfig {
             "/webjars/**",
             "/swagger-ui/index.html",
             "/swagger-ui.html",
-            "/api/test/all"
+            "/api/test/all",
+            "/api/webhooks/stripe"   // Stripe webhook: called by Stripe servers, must be permitAll
     };
 
     private static final String[] AUTH_ADMIN = {
