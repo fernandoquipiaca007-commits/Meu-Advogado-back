@@ -3,6 +3,8 @@ spring:
         name: upwork
     profiles:
         active: ${SPRING_PROFILES_ACTIVE:prod}
+    main:
+        allow-bean-definition-overriding: true
 debug: ${DEBUG:false}
 logging:
     level:
@@ -12,7 +14,7 @@ logging:
 legawork:
     features:
         financials:
-            stripe-enabled: true    # Sandbox credentials configured — safe to enable
+            stripe-enabled: true
         payouts:
             paypal-enabled: false
         funds:

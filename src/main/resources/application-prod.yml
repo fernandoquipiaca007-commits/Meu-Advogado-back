@@ -51,9 +51,9 @@ springdoc:
 server:
   port: ${PORT:8080}
 
-# ── Stripe Payment Integration ────────────────────────────────────────────────
+# Stripe Payment Integration
 # Secret key and webhook secret MUST come from environment variables (Railway)
-# Publishable key is public — safe to expose to frontend via /api/payments/config
+# Publishable key is public - safe to expose to frontend via /api/payments/config
 stripe:
   secret-key: "${STRIPE_SECRET_KEY:}"
   webhook-secret: "${STRIPE_WEBHOOK_SECRET:}"
