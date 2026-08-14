@@ -58,7 +58,15 @@ public class JwtService {
     }
 
     public String getJwtFromCookies(HttpServletRequest request) {
-        return getCookieValueByName(request, jwtCookie);
+        String token = getCookieValueByName(request, jwtCookie);
+        if (token != null && !token.isEmpty()) {
+            return token;
+        }
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 
     public String getJwtRefreshFromCookies(HttpServletRequest request) {

@@ -25,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private static final String[] AUTH_WHITELIST = {
+            "/error",
             "/api/auth/**",
             "/v2/api-docs",
             "/v3/api-docs",
@@ -47,7 +48,8 @@ public class SecurityConfig {
     };
 
     private static final String[] AUTH_FREELANCER = {
-            "/api/freelancer/**"
+            "/api/freelancer/**",
+            "/api/lawyer/**"
     };
 
     private static final String[] AUTH_CLIENT = {
@@ -79,9 +81,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(configurer -> configurer
                         .requestMatchers(AUTH_WHITELIST).permitAll()
-                        .requestMatchers(AUTH_ADMIN).hasRole("ADMIN")  // Only admins can access admin routes
-                        .requestMatchers(AUTH_FREELANCER).hasRole("FREELANCER")  // Freelancer access
-                        .requestMatchers(AUTH_CLIENT).hasRole("CLIENT")  // Client access
+                        .requestMatchers(AUTH_ADMIN).hasRole("ADMIN")
+                        .requestMatchers(AUTH_FREELANCER).hasAnyRole("FREELANCER", "LAWYER", "FIRM")
+                        .requestMatchers(AUTH_CLIENT).hasRole("CLIENT")
                         .anyRequest().authenticated()
                 );
 
