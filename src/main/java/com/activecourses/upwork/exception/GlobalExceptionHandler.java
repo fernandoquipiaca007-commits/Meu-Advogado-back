@@ -53,6 +53,19 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ResponseDto> handleEmailAlreadyExistsException(EmailAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ResponseDto
+                        .builder()
+                        .status(HttpStatus.CONFLICT)
+                        .success(false)
+                        .error(ex.getMessage() != null ? ex.getMessage() : "Este e-mail já está cadastrado. Acesse a aba Entrar para fazer login.")
+                        .build()
+                );
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ResponseDto> handleBadCredentialsException(BadCredentialsException ex) {
         return ResponseEntity
@@ -61,7 +74,20 @@ public class GlobalExceptionHandler {
                         .builder()
                         .status(HttpStatus.UNAUTHORIZED)
                         .success(false)
-                        .error("Invalid username or password")
+                        .error("E-mail ou senha incorretos.")
+                        .build()
+                );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ResponseDto> handleGenericException(Exception ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ResponseDto
+                        .builder()
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .success(false)
+                        .error(ex.getMessage() != null ? ex.getMessage() : "Ocorreu um erro interno no servidor.")
                         .build()
                 );
     }
