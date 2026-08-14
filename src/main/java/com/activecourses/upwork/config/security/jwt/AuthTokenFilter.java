@@ -35,6 +35,12 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
             String jwt = jwtService.getJwtFromCookies(request);
+            if (jwt == null || jwt.isEmpty()) {
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    jwt = authHeader.substring(7).trim();
+                }
+            }
             if (jwt != null && jwtService.validateJwtToken(jwt)) {
                 String username = jwtService.getUserNameFromJwtToken(jwt);
 
