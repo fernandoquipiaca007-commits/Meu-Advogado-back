@@ -1,7 +1,6 @@
 package com.activecourses.upwork.dto.user;
 
 import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,10 +17,7 @@ public class UserProfileDto {
     @Id
     private Integer id;
     
-    @NotBlank(message = "First Name is required")
     private String firstName;
-    
-    @NotBlank(message = "Last Name is required")
     private String lastName;
 
     private String title;

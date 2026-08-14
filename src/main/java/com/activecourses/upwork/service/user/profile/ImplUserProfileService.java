@@ -50,33 +50,43 @@ public class ImplUserProfileService implements UserProfileService {
     }
 
     private UserProfileDto doUpdate(UserProfileDto updateRequest, User user) {
-        // Update fields in user table
-        user.setFirstName(updateRequest.getFirstName());
-        user.setLastName(updateRequest.getLastName());
+        // Update fields in user table if provided and not blank
+        if (updateRequest.getFirstName() != null && !updateRequest.getFirstName().isBlank()) {
+            user.setFirstName(updateRequest.getFirstName());
+        }
+        if (updateRequest.getLastName() != null && !updateRequest.getLastName().isBlank()) {
+            user.setLastName(updateRequest.getLastName());
+        }
 
         // Get userProfile and update it
         UserProfile userProfile = user.getUserProfile();
-        userProfile.setTitle(updateRequest.getTitle());
-        userProfile.setDescription(updateRequest.getDescription());
-        userProfile.setLocation(updateRequest.getLocation());
-        userProfile.setHourlyRate(updateRequest.getHourlyRate());
+        if (userProfile == null) {
+            userProfile = new UserProfile();
+            userProfile.setUser(user);
+        }
+
+        if (updateRequest.getTitle() != null) userProfile.setTitle(updateRequest.getTitle());
+        if (updateRequest.getDescription() != null) userProfile.setDescription(updateRequest.getDescription());
+        if (updateRequest.getLocation() != null) userProfile.setLocation(updateRequest.getLocation());
+        if (updateRequest.getHourlyRate() != null) userProfile.setHourlyRate(updateRequest.getHourlyRate());
 
         // Legal fields
-        userProfile.setOabNumber(updateRequest.getOabNumber());
-        userProfile.setOabState(updateRequest.getOabState());
-        userProfile.setCountry(updateRequest.getCountry());
-        userProfile.setPhone(updateRequest.getPhone());
-        userProfile.setPhotoUrl(updateRequest.getPhotoUrl());
-        userProfile.setDateOfBirth(updateRequest.getDateOfBirth());
-        userProfile.setLanguages(updateRequest.getLanguages());
-        userProfile.setExperienceYears(updateRequest.getExperienceYears());
-        userProfile.setClientType(updateRequest.getClientType());
-        userProfile.setCompanyName(updateRequest.getCompanyName());
+        if (updateRequest.getOabNumber() != null) userProfile.setOabNumber(updateRequest.getOabNumber());
+        if (updateRequest.getOabState() != null) userProfile.setOabState(updateRequest.getOabState());
+        if (updateRequest.getCountry() != null) userProfile.setCountry(updateRequest.getCountry());
+        if (updateRequest.getPhone() != null) userProfile.setPhone(updateRequest.getPhone());
+        if (updateRequest.getPhotoUrl() != null) userProfile.setPhotoUrl(updateRequest.getPhotoUrl());
+        if (updateRequest.getDateOfBirth() != null) userProfile.setDateOfBirth(updateRequest.getDateOfBirth());
+        if (updateRequest.getLanguages() != null) userProfile.setLanguages(updateRequest.getLanguages());
+        if (updateRequest.getExperienceYears() != null) userProfile.setExperienceYears(updateRequest.getExperienceYears());
+        if (updateRequest.getVerificationStatus() != null) userProfile.setVerificationStatus(updateRequest.getVerificationStatus());
+        if (updateRequest.getClientType() != null) userProfile.setClientType(updateRequest.getClientType());
+        if (updateRequest.getCompanyName() != null) userProfile.setCompanyName(updateRequest.getCompanyName());
 
         // Update user in database
         user.setUserProfile(userProfile);
-        userRepository.save(user);
-        return updateRequest;
+        user = userRepository.save(user);
+        return userProfileMapper.mapTo(user);
     }
 
 }

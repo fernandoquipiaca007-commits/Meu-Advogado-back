@@ -1,8 +1,10 @@
 package com.activecourses.upwork.service.user;
 
 import com.activecourses.upwork.dto.user.UserDto;
+import com.activecourses.upwork.dto.user.UserProfileDto;
 import com.activecourses.upwork.dto.user.UserResponseDto;
 import com.activecourses.upwork.mapper.user.UserDtoMapper;
+import com.activecourses.upwork.mapper.user.UserProfileDtoMapper;
 import com.activecourses.upwork.model.User;
 import com.activecourses.upwork.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +23,14 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserDtoMapper userDtoMapper;
+    private final UserProfileDtoMapper userProfileDtoMapper;
 
+    @Override
+    public List<UserProfileDto> getAllLawyers() {
+        return userRepository.findAllLawyers().stream()
+                .map(userProfileDtoMapper::mapTo)
+                .toList();
+    }
 
     @Override
     public UserResponseDto getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir) {

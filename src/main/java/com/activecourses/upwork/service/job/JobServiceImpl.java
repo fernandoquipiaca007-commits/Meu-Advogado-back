@@ -42,6 +42,23 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + clientId));
 
         Job job = jobMapper.mapFrom(jobDTO);
+        if (job == null) {
+            job = new Job();
+        }
+
+        // Safe defaults
+        if (job.getJobType() == null) {
+            job.setJobType(JobType.Fixed);
+        }
+        if (job.getUrgency() == null) {
+            job.setUrgency(UrgencyLevel.Medium);
+        }
+        if (job.getStatus() == null) {
+            job.setStatus(JobStatus.Open);
+        }
+        if (job.getConfidentiality() == null) {
+            job.setConfidentiality(ConfidentialityLevel.Public);
+        }
 
         // Set skills
         if (jobDTO.getSkillIds() != null) {

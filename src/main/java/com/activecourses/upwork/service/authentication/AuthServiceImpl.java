@@ -331,9 +331,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            User user = (User) userDetails;
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
             return user.getId();
         }
         return null;

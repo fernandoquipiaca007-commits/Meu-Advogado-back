@@ -65,6 +65,17 @@ public class UserController {
                         .build());
     }
 
+    @Operation(summary = "Listar Advogados",
+            description = "Retorna todos os advogados cadastrados na plataforma")
+    @GetMapping("/lawyers")
+    public ResponseEntity<ResponseDto> getLawyers() {
+        return ResponseEntity.ok(ResponseDto.builder()
+                .status(HttpStatus.OK)
+                .success(true)
+                .data(userService.getAllLawyers())
+                .build());
+    }
+
     @Operation(summary = "Get User Profile",
             description = "Retrieve the profile information of the user specified by the userId.")
     @GetMapping("/profile/{userId}")
