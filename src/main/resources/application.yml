@@ -12,7 +12,7 @@ logging:
 legawork:
     features:
         financials:
-            stripe-enabled: false
+            stripe-enabled: true    # Sandbox credentials configured — safe to enable
         payouts:
             paypal-enabled: false
         funds:
@@ -20,4 +20,4 @@ legawork:
         automation:
             auto-release-enabled: false
         auth:
-            cookie-session-enabled: false
+            cookie-session-enabled: false
