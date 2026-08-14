@@ -46,7 +46,7 @@ public class UserController {
                             schema = @Schema(type = "string", defaultValue = "asc"))
             }
     )
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ResponseDto> getAllUsers(
             @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
@@ -82,6 +82,8 @@ public class UserController {
     public ResponseEntity<?> getUserProfile(@PathVariable int userId, HttpServletRequest httpRequest) {
         try {
             return userProfileService.getUserProfile(userId);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDto.builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -102,6 +104,8 @@ public class UserController {
                     .body(ResponseDto.builder().status(HttpStatus.UNAUTHORIZED).success(false).error("Not authenticated").build());
             }
             return userProfileService.getUserProfile(userId);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDto.builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -123,6 +127,8 @@ public class UserController {
                     .body(ResponseDto.builder().status(HttpStatus.UNAUTHORIZED).success(false).error("Not authenticated").build());
             }
             return userProfileService.UpdateUserProfile(userId, updateRequest);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDto.builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -140,6 +146,8 @@ public class UserController {
             @RequestBody @Valid UserProfileDto updateRequest) {
         try {
             return userProfileService.UpdateUserProfile(userId, updateRequest);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDto.builder()
                     .status(HttpStatus.BAD_REQUEST)

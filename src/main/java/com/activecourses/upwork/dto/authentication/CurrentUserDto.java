@@ -19,4 +19,8 @@ public class CurrentUserDto {
     private List<String> roles;
     private boolean accountEnabled;
     private boolean accountLocked;
+    private String verificationStatus;
+    private String oabNumber;
+    private String oabState;
+    private boolean mfaEnabled;
 }

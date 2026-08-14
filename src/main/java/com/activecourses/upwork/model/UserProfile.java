@@ -48,8 +48,19 @@ public class UserProfile {
 
     private Integer experienceYears;
 
+    private LocalDate oabExpiryDate;
+
+    @Column(columnDefinition = "TEXT")
+    private String jurisdictionStates;
+
     @Builder.Default
-    private String verificationStatus = "unverified";
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status")
+    @Builder.Default
+    private VerificationStatus verificationStatus = VerificationStatus.DRAFT;
 
     private String clientType;
 

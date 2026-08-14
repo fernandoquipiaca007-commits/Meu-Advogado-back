@@ -63,6 +63,15 @@ class AuthServiceImplTest {
     @Mock
     private RefreshTokenService refreshTokenService;
 
+    @Mock
+    private com.activecourses.upwork.repository.auth.RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private com.activecourses.upwork.service.authentication.AuditService auditService;
+
+    @Mock
+    private com.activecourses.upwork.config.FeatureFlags featureFlags;
+
     @InjectMocks
     private AuthServiceImpl authService;
 

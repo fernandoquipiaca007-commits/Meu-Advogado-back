@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.activecourses.upwork.service.security.AuthorizationService;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -30,12 +31,16 @@ public class ProposalServiceImpl implements ProposalService {
     private final AuthService authService;
     private final ContractService contractService;
     private final NotificationService notificationService;
+    private final AuthorizationService authorizationService;
 
     @Override
     @Transactional
     public ProposalDTO createProposal(ProposalDTO proposalDTO) {
         Integer lawyerId = authService.getCurrentUserId();
-        if (lawyerId == null) throw new IllegalStateException("Not authenticated");
+        if (lawyerId == null) throw new org.springframework.security.access.AccessDeniedException("Not authenticated");
+
+        // Enforce verified lawyer status (HTTP 403 / AccessDeniedException if not verified)
+        authorizationService.enforceVerifiedLawyer(lawyerId);
 
         User lawyer = userRepository.findById(lawyerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));

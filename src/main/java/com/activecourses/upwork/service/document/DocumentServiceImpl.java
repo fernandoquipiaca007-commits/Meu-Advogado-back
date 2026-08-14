@@ -8,6 +8,7 @@ import com.activecourses.upwork.repository.contract.ContractRepository;
 import com.activecourses.upwork.repository.document.ContractDocumentRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.service.security.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class DocumentServiceImpl implements DocumentService {
     private final ContractRepository contractRepository;
     private final UserRepository userRepository;
     private final AuthService authService;
+    private final AuthorizationService authorizationService;
 
     @Value("${app.upload.dir:uploads/documents}")
     private String uploadDir;
@@ -138,6 +140,10 @@ public class DocumentServiceImpl implements DocumentService {
     public DocumentDownloadInfo getDocumentDownloadInfo(int documentId) {
         ContractDocument doc = documentRepository.findById(documentId)
                 .orElseThrow(() -> new IllegalArgumentException("Document not found"));
+
+        Integer userId = authService.getCurrentUserId();
+        authorizationService.enforceContractParticipant(doc.getContract().getContractId(), userId);
+
         return new DocumentDownloadInfo(
                 doc.getStoragePath(),
                 doc.getContentType(),

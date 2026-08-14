@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import com.activecourses.upwork.service.security.AuthorizationService;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,7 @@ public class ContractServiceImpl implements ContractService {
     private final ProposalRepository proposalRepository;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final AuthorizationService authorizationService;
 
     @Override
     @Transactional
@@ -43,6 +45,9 @@ public class ContractServiceImpl implements ContractService {
         Job job = proposal.getJob();
         User client = job.getClient();
         User lawyer = proposal.getLawyer();
+
+        // Enforce verified lawyer status (HTTP 403 / AccessDeniedException if not verified)
+        authorizationService.enforceVerifiedLawyer(lawyer.getId());
 
         String title = "Mandato: " + job.getTitle();
         String description = job.getDescription();

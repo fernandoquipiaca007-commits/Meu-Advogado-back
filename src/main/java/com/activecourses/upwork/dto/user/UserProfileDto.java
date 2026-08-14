@@ -25,9 +25,11 @@ public class UserProfileDto {
     private BigDecimal hourlyRate;
     private String location;
     
-    // Legal fields
     private String oabNumber;
     private String oabState;
+    private LocalDate oabExpiryDate;
+    private String jurisdictionStates;
+    private boolean mfaEnabled;
     private String country;
     private String phone;
     private String photoUrl;

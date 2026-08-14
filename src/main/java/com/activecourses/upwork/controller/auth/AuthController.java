@@ -6,6 +6,7 @@ import com.activecourses.upwork.dto.authentication.login.LoginRequestDto;
 import com.activecourses.upwork.dto.ResponseDto;
 import com.activecourses.upwork.dto.authentication.registration.RegistrationRequestDto;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.service.authentication.AuthServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +39,7 @@ public class AuthController {
     )
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegistrationRequestDto registrationRequestDto, HttpServletRequest request) {
-        logger.info("Registering user with email: {}", registrationRequestDto.getEmail());
+        logger.info("Registering user with email: {}", AuthServiceImpl.maskEmail(registrationRequestDto.getEmail()));
         return authService.registerWithAudit(registrationRequestDto, request);
     }
 
@@ -73,7 +74,7 @@ public class AuthController {
     )
     @PostMapping("login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto loginRequestDto, HttpServletRequest request) {
-        logger.info("User login attempt with email: {}", loginRequestDto.getEmail());
+        logger.info("User login attempt with email: {}", AuthServiceImpl.maskEmail(loginRequestDto.getEmail()));
         return authService.loginWithAudit(loginRequestDto, request);
     }
 

@@ -6,9 +6,14 @@ import com.activecourses.upwork.mapper.Mapper;
 import com.activecourses.upwork.model.User;
 import com.activecourses.upwork.model.UserProfile;
 import com.activecourses.upwork.repository.user.UserRepository;
+import com.activecourses.upwork.service.authentication.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Service;
 public class ImplUserProfileService implements UserProfileService {
     private final UserRepository userRepository;
     private final Mapper<User, UserProfileDto> userProfileMapper;
+    private final AuthService authService;
 
     @Override
     public ResponseEntity<?> getUserProfile(int id) {
@@ -39,6 +45,11 @@ public class ImplUserProfileService implements UserProfileService {
 
     @Override
     public ResponseEntity<?> UpdateUserProfile(int userId, UserProfileDto updateRequest) {
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId == null || (!currentUserId.equals(userId) && !isAdmin())) {
+            throw new AccessDeniedException("You are not authorized to update profile of user " + userId);
+        }
+
         User user = userRepository.findById(userId).
                 orElseThrow(() -> new UsernameNotFoundException("user Not Found"));
         return ResponseEntity.ok()
@@ -73,13 +84,16 @@ public class ImplUserProfileService implements UserProfileService {
         // Legal fields
         if (updateRequest.getOabNumber() != null) userProfile.setOabNumber(updateRequest.getOabNumber());
         if (updateRequest.getOabState() != null) userProfile.setOabState(updateRequest.getOabState());
+        if (updateRequest.getOabExpiryDate() != null) userProfile.setOabExpiryDate(updateRequest.getOabExpiryDate());
+        if (updateRequest.getJurisdictionStates() != null) userProfile.setJurisdictionStates(updateRequest.getJurisdictionStates());
+        userProfile.setMfaEnabled(updateRequest.isMfaEnabled());
         if (updateRequest.getCountry() != null) userProfile.setCountry(updateRequest.getCountry());
         if (updateRequest.getPhone() != null) userProfile.setPhone(updateRequest.getPhone());
         if (updateRequest.getPhotoUrl() != null) userProfile.setPhotoUrl(updateRequest.getPhotoUrl());
         if (updateRequest.getDateOfBirth() != null) userProfile.setDateOfBirth(updateRequest.getDateOfBirth());
         if (updateRequest.getLanguages() != null) userProfile.setLanguages(updateRequest.getLanguages());
         if (updateRequest.getExperienceYears() != null) userProfile.setExperienceYears(updateRequest.getExperienceYears());
-        if (updateRequest.getVerificationStatus() != null) userProfile.setVerificationStatus(updateRequest.getVerificationStatus());
+        // NOTE: verificationStatus cannot be modified directly via user profile update
         if (updateRequest.getClientType() != null) userProfile.setClientType(updateRequest.getClientType());
         if (updateRequest.getCompanyName() != null) userProfile.setCompanyName(updateRequest.getCompanyName());
 
@@ -89,4 +103,16 @@ public class ImplUserProfileService implements UserProfileService {
         return userProfileMapper.mapTo(user);
     }
 
+    private boolean isAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        for (GrantedAuthority authority : auth.getAuthorities()) {
+            if ("ROLE_ADMIN".equals(authority.getAuthority()) || "ADMIN".equals(authority.getAuthority())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

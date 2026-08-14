@@ -18,7 +18,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
@@ -91,9 +93,19 @@ public class User implements UserDetails, Principal {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
+        if (roles == null) {
+            return List.of();
+        }
+        Set<SimpleGrantedAuthority> authorities = roles.stream()
+                .filter(role -> role != null && role.getName() != null)
                 .map(role -> new SimpleGrantedAuthority(role.getName()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
+        if (authorities.contains(new SimpleGrantedAuthority("ROLE_LAWYER"))) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_FREELANCER"));
+        } else if (authorities.contains(new SimpleGrantedAuthority("ROLE_FREELANCER"))) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_LAWYER"));
+        }
+        return authorities;
     }
 
     @Override

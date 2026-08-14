@@ -27,12 +27,9 @@ public class SecurityConfig {
     private static final String[] AUTH_WHITELIST = {
             "/error",
             "/api/auth/**",
-            "/api/jobs",
-            "/api/jobs/all",
-            "/api/jobs/**",
+            "/api/users/verify",
             "/api/specialties/**",
             "/api/users/lawyers",
-            "/api/users/profile/**",
             "/v2/api-docs",
             "/v3/api-docs",
             "/v3/api-docs/**",

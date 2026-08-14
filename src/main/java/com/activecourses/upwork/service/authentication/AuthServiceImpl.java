@@ -1,8 +1,10 @@
 package com.activecourses.upwork.service.authentication;
 
+import com.activecourses.upwork.config.FeatureFlags;
 import com.activecourses.upwork.config.security.CustomUserDetailsService;
 import com.activecourses.upwork.dto.ResponseDto;
 import com.activecourses.upwork.dto.authentication.login.LoginRequestDto;
+import com.activecourses.upwork.dto.authentication.login.LoginResponseDto;
 import com.activecourses.upwork.dto.authentication.registration.RegistrationRequestDto;
 import com.activecourses.upwork.dto.authentication.registration.RegistrationResponseDto;
 import com.activecourses.upwork.dto.authentication.CurrentUserDto;
@@ -10,6 +12,8 @@ import com.activecourses.upwork.mapper.Mapper;
 import com.activecourses.upwork.model.RefreshToken;
 import com.activecourses.upwork.model.User;
 import com.activecourses.upwork.model.UserProfile;
+import com.activecourses.upwork.model.VerificationStatus;
+import com.activecourses.upwork.repository.auth.RefreshTokenRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.repository.role.RoleRepository;
 import com.activecourses.upwork.config.security.jwt.JwtService;
@@ -19,6 +23,7 @@ import com.activecourses.upwork.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -56,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
     private final CustomUserDetailsService customUserDetailsService;
     private final RefreshTokenService refreshTokenService;
     private final AuditService auditService;
+    private final FeatureFlags featureFlags;
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     @Value("${BACKEND_URL:http://localhost:8080}")
@@ -63,6 +70,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
+
+    public static String maskEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            return "***";
+        }
+        String[] parts = email.split("@", 2);
+        String name = parts[0];
+        String domain = parts[1];
+        if (name.length() <= 2) {
+            return name.charAt(0) + "***@" + domain;
+        }
+        return name.charAt(0) + "***" + name.charAt(name.length() - 1) + "@" + domain;
+    }
 
     @Override
     public CurrentUserDto getCurrentUserWithRoles() {
@@ -72,6 +92,7 @@ public class AuthServiceImpl implements AuthService {
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        UserProfile profile = user.getUserProfile();
         return CurrentUserDto.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -80,28 +101,53 @@ public class AuthServiceImpl implements AuthService {
                 .roles(user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toList()))
                 .accountEnabled(user.isAccountEnabled())
                 .accountLocked(user.isAccountLocked())
+                .verificationStatus(profile != null && profile.getVerificationStatus() != null ? profile.getVerificationStatus().name() : VerificationStatus.DRAFT.name())
+                .oabNumber(profile != null ? profile.getOabNumber() : null)
+                .oabState(profile != null ? profile.getOabState() : null)
+                .mfaEnabled(profile != null && profile.isMfaEnabled())
                 .build();
     }
 
     @Override
     public ResponseEntity<?> loginWithAudit(LoginRequestDto loginRequestDto, HttpServletRequest request) {
-        String ipAddress = request.getRemoteAddr();
+        String ipAddress = request != null ? request.getRemoteAddr() : "unknown";
         try {
             ResponseDto responseDto = login(loginRequestDto);
             if (responseDto.isSuccess()) {
                 User user = findByEmail(loginRequestDto.getEmail());
                 auditService.logLogin(user.getId(), ipAddress);
             } else {
-                auditService.logLoginFailed(loginRequestDto.getEmail(), ipAddress);
+                auditService.logLoginFailed(maskEmail(loginRequestDto.getEmail()), ipAddress);
             }
-            // Rebuild response with cookies
-            Map<String, ResponseCookie> cookies = (Map<String, ResponseCookie>) responseDto.getData();
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dataMap = (Map<String, Object>) responseDto.getData();
+            ResponseCookie jwtCookie = (ResponseCookie) dataMap.get("jwtCookie");
+            ResponseCookie refreshJwtCookie = (ResponseCookie) dataMap.get("refreshJwtCookie");
+
+            Object bodyData;
+            if (featureFlags != null && featureFlags.isCookieSessionEnabled()) {
+                bodyData = Map.of("message", "Authenticated successfully via secure cookie session");
+            } else {
+                bodyData = LoginResponseDto.builder()
+                        .accessToken((String) dataMap.get("accessToken"))
+                        .refreshToken((String) dataMap.get("refreshToken"))
+                        .build();
+            }
+
+            ResponseDto clientResponse = ResponseDto.builder()
+                    .status(responseDto.getStatus())
+                    .success(responseDto.isSuccess())
+                    .data(bodyData)
+                    .error(responseDto.getError())
+                    .build();
+
             return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, cookies.get("jwtCookie").toString())
-                    .header(HttpHeaders.SET_COOKIE, cookies.get("refreshJwtCookie").toString())
-                    .body(responseDto);
+                    .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshJwtCookie.toString())
+                    .body(clientResponse);
         } catch (Exception e) {
-            auditService.logLoginFailed(loginRequestDto.getEmail(), ipAddress);
+            auditService.logLoginFailed(maskEmail(loginRequestDto.getEmail()), ipAddress);
             throw e;
         }
     }
@@ -111,7 +157,7 @@ public class AuthServiceImpl implements AuthService {
         RegistrationResponseDto regResponse = registerUser(registrationRequestDto);
         try {
             User user = findByEmail(registrationRequestDto.getEmail());
-            auditService.logRegister(user.getId(), request.getRemoteAddr());
+            auditService.logRegister(user.getId(), request != null ? request.getRemoteAddr() : "unknown");
         } catch (Exception e) {
             logger.warn("Could not log register audit: {}", e.getMessage());
         }
@@ -127,11 +173,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public RegistrationResponseDto registerUser(RegistrationRequestDto registrationRequestDto) {
-        logger.info("Registering user with email: {}", registrationRequestDto.getEmail());
+        logger.info("Registering user with email: {}", maskEmail(registrationRequestDto.getEmail()));
 
         // Check for duplicate email before saving
         if (userRepository.findByEmail(registrationRequestDto.getEmail()).isPresent()) {
-            throw new EmailAlreadyExistsException("Email already exists: " + registrationRequestDto.getEmail());
+            throw new EmailAlreadyExistsException("Email already exists: " + maskEmail(registrationRequestDto.getEmail()));
         }
 
         User user = userMapper.mapFrom(registrationRequestDto);
@@ -139,6 +185,7 @@ public class AuthServiceImpl implements AuthService {
         UserProfile profile = new UserProfile();
         profile.setCountry("BR");
         profile.setUser(user);
+        profile.setVerificationStatus(VerificationStatus.DRAFT);
         user.setUserProfile(profile);
         userRepository.save(user);
 
@@ -151,11 +198,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     @Override
     public ResponseDto login(LoginRequestDto loginRequestDto) {
-        logger.info("User login attempt with email: {}", loginRequestDto.getEmail());
+        logger.info("User login attempt with email: {}", maskEmail(loginRequestDto.getEmail()));
         User user = findByEmail(loginRequestDto.getEmail());
 
         if (!user.isAccountEnabled()) {
-            logger.warn("Account is disabled for user: {}", loginRequestDto.getEmail());
+            logger.warn("Account is disabled for user: {}", maskEmail(loginRequestDto.getEmail()));
             return ResponseDto
                     .builder()
                     .status(HttpStatus.FORBIDDEN)
@@ -165,7 +212,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (user.isAccountLocked()) {
-            logger.warn("Account is locked for user: {}", loginRequestDto.getEmail());
+            logger.warn("Account is locked for user: {}", maskEmail(loginRequestDto.getEmail()));
             return ResponseDto
                     .builder()
                     .status(HttpStatus.LOCKED)
@@ -194,22 +241,35 @@ public class AuthServiceImpl implements AuthService {
         ResponseCookie refreshJwtCookie = jwtService
                 .generateRefreshJwtCookie(refreshToken.getToken());
 
+        String accessToken = jwtService.generateAccessToken(userDetails);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("jwtCookie", jwtCookie);
+        data.put("refreshJwtCookie", refreshJwtCookie);
+        data.put("accessToken", accessToken);
+        data.put("refreshToken", refreshToken.getToken());
+
         return ResponseDto
                 .builder()
                 .status(HttpStatus.OK)
                 .success(true)
-                .data(Map.of("jwtCookie", jwtCookie, "refreshJwtCookie", refreshJwtCookie))
+                .data(data)
                 .build();
     }
 
     @Override
+    @Transactional
     public ResponseEntity<ResponseDto> logout() {
         logger.info("User logout attempt");
-        Object principal = SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        if (!principal.toString().equals("anonymousUser")) {
-            int userId = ((User) principal).getId();
-            refreshTokenService.deleteByUserId(userId);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user) {
+            int userId = user.getId();
+            refreshTokenRepository.deleteByUserId(userId);
+        } else {
+            Integer userId = getCurrentUserId();
+            if (userId != null) {
+                refreshTokenRepository.deleteByUserId(userId);
+            }
         }
 
         ResponseCookie jwtCookie = jwtService.getCleanJwtCookie();
@@ -236,7 +296,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean verifyUser(String token) {
-        logger.info("Verifying user with token: {}", token);
+        logger.info("Verifying user with token");
         Optional<User> user = userRepository.findByVerificationToken(token);
         User unwrappedUser = unwrapUser(user);
         unwrappedUser.setAccountEnabled(true);
@@ -247,15 +307,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public User findByEmail(String email) {
-        logger.info("Finding user by email: {}", email);
+        logger.info("Finding user by email: {}", maskEmail(email));
         Optional<User> user = userRepository.findByEmail(email);
         return unwrapUser(user);
     }
 
     @Override
     public void sendVerificationEmail(User user) {
-        logger.info("Sending verification email to: {}", user.getEmail());
-        String verificationLink = backendUrl + "/api/users/verify?token="
+        logger.info("Sending verification email to: {}", maskEmail(user.getEmail()));
+        String verificationLink = backendUrl + "/api/auth/verify?token="
                                   + user.getVerificationToken();
 
         SimpleMailMessage message = new SimpleMailMessage();
@@ -287,7 +347,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void forgotPassword(String email) {
-        logger.info("Processing forgot password for email: {}", email);
+        logger.info("Processing forgot password for email: {}", maskEmail(email));
         try {
             User user = findByEmail(email);
             // Generate a reset token (UUID-based)
@@ -305,7 +365,7 @@ public class AuthServiceImpl implements AuthService {
                     + "\n\nThis link will expire in 24 hours."
                     + "\n\nIf you did not request this, please ignore this email.");
             mailSender.send(message);
-            logger.info("Password reset email sent to: {}", email);
+            logger.info("Password reset email sent to: {}", maskEmail(email));
         } catch (Exception e) {
             // Log but don't reveal if email exists (prevent enumeration)
             logger.warn("Forgot password processing failed: {}", e.getMessage());
@@ -341,7 +401,7 @@ public class AuthServiceImpl implements AuthService {
         if (entity.isPresent()) {
             return entity.get();
         } else {
-            throw new UnsupportedOperationException("Unimplemented method 'unwrapUser'");
+            throw new UnsupportedOperationException("User not found");
         }
     }
 }

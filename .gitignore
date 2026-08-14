@@ -94,6 +94,8 @@ compartilhados/
 ## Miscellaneous
 ##############################
 *.log
-
+test_status.txt
+build_prod.bat
+frontend/
 
 myconfig.properties

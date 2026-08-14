@@ -11,7 +11,6 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByEmail(String email);
-    Optional<User> findById(int id);
     Optional<User> findByVerificationToken(String token);
 
     @Query("SELECT DISTINCT u FROM User u JOIN u.roles r LEFT JOIN FETCH u.userProfile WHERE r.name IN ('ROLE_LAWYER', 'ROLE_FREELANCER') AND u.accountEnabled = true")

@@ -8,3 +8,16 @@ logging:
     level:
         org.springframework.boot.autoconfigure: ERROR
         org.springframework.core: ERROR
+
+legawork:
+    features:
+        financials:
+            stripe-enabled: false
+        payouts:
+            paypal-enabled: false
+        funds:
+            hold-enabled: false
+        automation:
+            auto-release-enabled: false
+        auth:
+            cookie-session-enabled: false
