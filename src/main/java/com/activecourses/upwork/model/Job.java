@@ -23,7 +23,9 @@ import lombok.Setter;
     @Index(name = "idx_jobs_urgency", columnList = "urgency"),
     @Index(name = "idx_jobs_status", columnList = "status"),
     @Index(name = "idx_jobs_specialty", columnList = "specialty_id"),
-    @Index(name = "idx_jobs_archived", columnList = "archived")
+    @Index(name = "idx_jobs_archived", columnList = "archived"),
+    @Index(name = "idx_jobs_visibility", columnList = "visibility"),
+    @Index(name = "idx_jobs_moderation_status", columnList = "moderation_status")
 })
 public class Job {
 
@@ -66,6 +68,24 @@ public class Job {
     @Builder.Default
     @Column(nullable = false)
     private ConfidentialityLevel confidentiality = ConfidentialityLevel.Public;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false, length = 50)
+    private JobVisibility visibility = JobVisibility.PRIVATE;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false, length = 50)
+    private JobSensitivity sensitivity = JobSensitivity.STANDARD;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "moderation_status", nullable = false, length = 50)
+    private ModerationStatus moderationStatus = ModerationStatus.PENDING_REVIEW;
+
+    @Column(name = "moderation_reason", columnDefinition = "TEXT")
+    private String moderationReason;
 
     @Column(precision = 12, scale = 2)
     private BigDecimal estimatedValue;

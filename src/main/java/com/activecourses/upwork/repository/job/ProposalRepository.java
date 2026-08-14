@@ -5,6 +5,7 @@ import com.activecourses.upwork.model.ProposalStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,8 @@ public interface ProposalRepository extends JpaRepository<Proposal, Integer> {
     List<Proposal> findByJobJobIdAndStatus(int jobId, ProposalStatus status);
     Optional<Proposal> findByJobJobIdAndLawyerId(int jobId, int lawyerId);
     long countByJobJobId(int jobId);
+
+    boolean existsByJobJobIdAndLawyerIdAndStatusIn(int jobId, int lawyerId, Collection<ProposalStatus> statuses);
+    List<Proposal> findByJobJobIdAndLawyerIdAndStatusIn(int jobId, int lawyerId, Collection<ProposalStatus> statuses);
+    Optional<Proposal> findFirstByJobJobIdAndLawyerIdAndStatusIn(int jobId, int lawyerId, Collection<ProposalStatus> statuses);
 }

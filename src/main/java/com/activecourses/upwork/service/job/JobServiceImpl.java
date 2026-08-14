@@ -6,17 +6,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.activecourses.upwork.dto.JobDTO;
+import com.activecourses.upwork.dto.JobDiscoveryDto;
 import com.activecourses.upwork.mapper.JobMapper;
 import com.activecourses.upwork.model.*;
 import com.activecourses.upwork.repository.job.JobRepository;
+import com.activecourses.upwork.repository.job.ProposalRepository;
 import com.activecourses.upwork.repository.skill.SkillRepository;
 import com.activecourses.upwork.repository.skill.SpecialtyRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.service.moderation.ContentModerationService;
+import com.activecourses.upwork.service.security.AuthorizationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,18 +31,25 @@ import lombok.RequiredArgsConstructor;
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
+    private final ProposalRepository proposalRepository;
     private final UserRepository userRepository;
     private final AuthService authService;
     private final JobMapper jobMapper;
     private final SkillRepository skillRepository;
     private final SpecialtyRepository specialtyRepository;
+    private final ContentModerationService contentModerationService;
+    private final AuthorizationService authorizationService;
 
     @Override
+    @Transactional
     public Job createJob(JobDTO jobDTO) {
         Integer clientId = authService.getCurrentUserId();
         if (clientId == null) {
             throw new IllegalStateException("User is not authenticated");
         }
+
+        // Validate content against prohibited regex patterns (CNJ, CPF, CNPJ, Email, Phone, URL)
+        contentModerationService.validateJobContent(jobDTO.getTitle(), jobDTO.getDescription());
 
         User client = userRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + clientId));
@@ -59,6 +72,13 @@ public class JobServiceImpl implements JobService {
         if (job.getConfidentiality() == null) {
             job.setConfidentiality(ConfidentialityLevel.Public);
         }
+        if (job.getVisibility() == null) {
+            job.setVisibility(jobDTO.getVisibility() != null ? jobDTO.getVisibility() : JobVisibility.PRIVATE);
+        }
+        if (job.getSensitivity() == null) {
+            job.setSensitivity(jobDTO.getSensitivity() != null ? jobDTO.getSensitivity() : JobSensitivity.STANDARD);
+        }
+        job.setModerationStatus(ModerationStatus.APPROVED);
 
         // Set skills
         if (jobDTO.getSkillIds() != null) {
@@ -92,6 +112,38 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    public JobDTO getJobDetail(int jobId, Integer requestingUserId) {
+        authorizationService.enforceCanViewJobDetail(jobId, requestingUserId);
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("Legal case not found with ID: " + jobId));
+
+        JobDTO dto = jobMapper.mapTo(job);
+        dto.setProposalsCount((int) proposalRepository.countByJobJobId(jobId));
+        return dto;
+    }
+
+    @Override
+    public Page<JobDiscoveryDto> getDiscoveryCases(Integer specialtyId, UrgencyLevel urgency, Pageable pageable) {
+        List<JobVisibility> allowedVisibilities = List.of(JobVisibility.DISCOVERY_SANITIZED, JobVisibility.INVITE_ONLY);
+
+        Page<Job> jobPage = jobRepository.findDiscoveryJobs(
+                allowedVisibilities,
+                ModerationStatus.APPROVED,
+                JobStatus.Open,
+                specialtyId,
+                urgency,
+                pageable
+        );
+
+        return jobPage.map(job -> {
+            JobDiscoveryDto discoveryDto = jobMapper.toDiscoveryDto(job);
+            discoveryDto.setProposalsCount((int) proposalRepository.countByJobJobId(job.getJobId()));
+            return discoveryDto;
+        });
+    }
+
+    @Override
     @Transactional
     public Job updateJob(int jobId, JobDTO jobDTO) {
         Job job = jobRepository.findById(jobId)
@@ -103,12 +155,21 @@ public class JobServiceImpl implements JobService {
             throw new SecurityException("You can only update your own legal cases");
         }
 
+        // Validate content against prohibited regex patterns
+        contentModerationService.validateJobContent(jobDTO.getTitle(), jobDTO.getDescription());
+
         job.setTitle(jobDTO.getTitle());
         job.setDescription(jobDTO.getDescription());
         job.setBudget(jobDTO.getBudget());
-        job.setJobType(jobDTO.getJobType());
+        job.setJobType(jobDTO.getJobType() != null ? jobDTO.getJobType() : job.getJobType());
         job.setUrgency(jobDTO.getUrgency() != null ? jobDTO.getUrgency() : job.getUrgency());
         job.setConfidentiality(jobDTO.getConfidentiality() != null ? jobDTO.getConfidentiality() : job.getConfidentiality());
+        if (jobDTO.getVisibility() != null) {
+            job.setVisibility(jobDTO.getVisibility());
+        }
+        if (jobDTO.getSensitivity() != null) {
+            job.setSensitivity(jobDTO.getSensitivity());
+        }
         job.setEstimatedValue(jobDTO.getEstimatedValue());
         job.setDeadline(jobDTO.getDeadline());
 

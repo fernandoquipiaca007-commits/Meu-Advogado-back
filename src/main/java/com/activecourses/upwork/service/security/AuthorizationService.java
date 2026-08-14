@@ -13,6 +13,10 @@ public interface AuthorizationService {
 
     void enforceProposalOwnerOrClient(Integer proposalId, Integer userId);
 
+    void enforceCanViewJobDetail(Integer jobId, Integer userId);
+
+    void enforceNegotiationParticipant(Integer proposalId, Integer userId);
+
     AdminAccessLog logAdminAccess(Integer adminUserId,
                                   Integer targetUserId,
                                   String resourceType,

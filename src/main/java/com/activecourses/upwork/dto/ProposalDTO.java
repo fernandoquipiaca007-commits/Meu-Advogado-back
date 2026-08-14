@@ -32,4 +32,14 @@ public class ProposalDTO {
     private String lawyerOab;
     private Integer lawyerExperienceYears;
     private Integer contractId;
+    private Integer proposalVersion;
+    private Long negotiationThreadId;
+
+    public Integer getId() {
+        return proposalId;
+    }
+
+    public void setId(Integer id) {
+        this.proposalId = id;
+    }
 }

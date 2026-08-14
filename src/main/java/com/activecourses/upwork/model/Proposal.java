@@ -57,6 +57,13 @@ public class Proposal {
     @Column(precision = 12, scale = 2)
     private BigDecimal totalValue;
 
+    @Builder.Default
+    @Column(name = "proposal_version", nullable = false)
+    private Integer proposalVersion = 1;
+
+    @OneToOne(mappedBy = "proposal", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private NegotiationThread negotiationThread;
+
     private LocalDateTime updatedAt;
 
     @PrePersist

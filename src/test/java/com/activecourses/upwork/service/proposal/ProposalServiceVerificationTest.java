@@ -4,6 +4,7 @@ import com.activecourses.upwork.dto.ProposalDTO;
 import com.activecourses.upwork.model.*;
 import com.activecourses.upwork.repository.job.JobRepository;
 import com.activecourses.upwork.repository.job.ProposalRepository;
+import com.activecourses.upwork.repository.negotiation.NegotiationThreadRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
 import com.activecourses.upwork.service.contract.ContractService;
@@ -44,6 +45,9 @@ class ProposalServiceVerificationTest {
     private NotificationService notificationService;
 
     @Mock
+    private NegotiationThreadRepository negotiationThreadRepository;
+
+    @Mock
     private AuthorizationService authorizationService;
 
     @InjectMocks
@@ -71,6 +75,7 @@ class ProposalServiceVerificationTest {
             p.setProposalId(101);
             return p;
         });
+        when(negotiationThreadRepository.save(any(NegotiationThread.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ProposalDTO request = ProposalDTO.builder()
                 .jobId(10)

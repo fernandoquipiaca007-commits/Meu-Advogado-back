@@ -109,6 +109,44 @@ public class ImplAuthorizationService implements AuthorizationService {
     }
 
     @Override
+    public void enforceCanViewJobDetail(Integer jobId, Integer userId) {
+        if (userId == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+
+        if (isAdmin()) {
+            return;
+        }
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("Job not found with id: " + jobId));
+
+        // 1. Owner client
+        if (job.getClient() != null && userId.equals(job.getClient().getId())) {
+            return;
+        }
+
+        // 2. Lawyer with submitted proposal
+        if (proposalRepository.findByJobJobIdAndLawyerId(jobId, userId).isPresent()) {
+            return;
+        }
+
+        // 3. Sanitized discovery job visible to verified lawyers
+        if (job.getVisibility() == JobVisibility.DISCOVERY_SANITIZED && job.getModerationStatus() == ModerationStatus.APPROVED) {
+            enforceVerifiedLawyer(userId);
+            return;
+        }
+
+        // 4. Otherwise forbidden
+        throw new AccessDeniedException("Access denied: You do not have permission to view details for this legal case.");
+    }
+
+    @Override
+    public void enforceNegotiationParticipant(Integer proposalId, Integer userId) {
+        enforceProposalOwnerOrClient(proposalId, userId);
+    }
+
+    @Override
     @Transactional
     public AdminAccessLog logAdminAccess(Integer adminUserId,
                                         Integer targetUserId,

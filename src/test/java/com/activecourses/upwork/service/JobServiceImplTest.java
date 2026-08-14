@@ -15,8 +15,11 @@ import com.activecourses.upwork.model.User;
 import com.activecourses.upwork.repository.job.JobRepository;
 import com.activecourses.upwork.repository.skill.SkillRepository;
 import com.activecourses.upwork.repository.user.UserRepository;
+import com.activecourses.upwork.repository.job.ProposalRepository;
 import com.activecourses.upwork.service.authentication.AuthService;
 import com.activecourses.upwork.service.job.JobServiceImpl;
+import com.activecourses.upwork.service.moderation.ContentModerationService;
+import com.activecourses.upwork.service.security.AuthorizationService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,15 @@ class JobServiceImplTest {
 
     @Mock
     private SkillRepository skillRepository;
+
+    @Mock
+    private ContentModerationService contentModerationService;
+
+    @Mock
+    private AuthorizationService authorizationService;
+
+    @Mock
+    private ProposalRepository proposalRepository;
 
     @InjectMocks
     private JobServiceImpl jobService;
