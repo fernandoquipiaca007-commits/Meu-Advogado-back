@@ -21,6 +21,13 @@ class NonAuthenticatedSecurityTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.junit.jupiter.api.BeforeEach
+    @org.junit.jupiter.api.AfterEach
+    void setUp() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+
     @Test
     @DisplayName("GET /api/cases/discovery without token should return 401 Unauthorized")
     void testGetDiscoveryCasesWithoutTokenReturns401() throws Exception {
