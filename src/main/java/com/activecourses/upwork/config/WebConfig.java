@@ -23,10 +23,13 @@ public class WebConfig {
                                 "http://localhost:*",
                                 "http://127.0.0.1:*",
                                 "https://*.vercel.app",
-                                "https://*.up.railway.app"
+                                "https://legalwork.vercel.app",
+                                "https://*.up.railway.app",
+                                "*"
                         )
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")
                         .allowedHeaders("*")
+                        .exposedHeaders("Authorization", "Content-Type", "Set-Cookie", "X-Document-SHA256")
                         .allowCredentials(true)
                         .maxAge(3600);
             }
