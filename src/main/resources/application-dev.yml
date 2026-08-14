@@ -6,6 +6,9 @@ spring:
     username: "${POSTGRES_USER}"
     password: "${POSTGRES_PASSWORD}"
     driver-class-name: "org.postgresql.Driver"
+    hikari:
+      data-source-properties:
+        stringtype: unspecified
   jpa:
     hibernate:
       ddl-auto: validate

@@ -15,6 +15,7 @@ spring:
       data-source-properties:
         sslmode: require
         ssl: true
+        stringtype: unspecified
   jpa:
     hibernate:
       ddl-auto: validate
