@@ -18,12 +18,16 @@ import com.activecourses.upwork.model.UrgencyLevel;
 import com.activecourses.upwork.service.job.JobService;
 import com.activecourses.upwork.service.security.AuthorizationService;
 import com.activecourses.upwork.service.authentication.AuthService;
+import com.activecourses.upwork.service.notification.NotificationService;
+import com.activecourses.upwork.model.NotificationType;
+import com.activecourses.upwork.model.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 
 @Tag(name = "Casos Jurídicos", description = "Legal Case Management API")
 @RestController
@@ -34,6 +38,7 @@ public class JobController {
     private final JobMapper jobMapper;
     private final AuthService authService;
     private final AuthorizationService authorizationService;
+    private final NotificationService notificationService;
 
     @Operation(summary = "Catálogo de Descoberta Sanitizado", description = "Retrieve paginated sanitized discovery cases for verified lawyers")
     @PreAuthorize("hasRole('LAWYER') or hasRole('FREELANCER') or hasAuthority('ROLE_LAWYER') or hasAuthority('ROLE_FREELANCER')")
@@ -129,6 +134,44 @@ public class JobController {
                 .map(jobMapper::mapTo)
                 .toList();
         return buildResponse(HttpStatus.OK, true, jobs, null);
+    }
+
+    @Operation(summary = "Convidar advogado para caso", description = "Client invites a specific lawyer to submit a proposal",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/{jobId}/invite")
+    public ResponseEntity<ResponseDto> inviteLawyerToJob(
+            @PathVariable int jobId,
+            @RequestBody Map<String, Object> body) {
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId == null) {
+            return buildResponse(HttpStatus.UNAUTHORIZED, false, null, "Not authenticated");
+        }
+
+        Object lawyerIdObj = body.get("lawyerId");
+        String customMessage = body.get("message") != null ? body.get("message").toString() : "";
+
+        if (lawyerIdObj == null) {
+            return buildResponse(HttpStatus.BAD_REQUEST, false, null, "lawyerId is required");
+        }
+
+        int lawyerId = Integer.parseInt(lawyerIdObj.toString());
+
+        Job job = jobService.getJobById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("Caso jurídico não encontrado: " + jobId));
+        User client = job.getClient();
+        String clientName = client != null ? (client.getFirstName() + " " + client.getLastName()).trim() : "Cliente";
+
+        notificationService.createNotification(
+                lawyerId,
+                NotificationType.PROPOSAL_RECEIVED,
+                "Convite para Demanda Jurídica",
+                clientName + " convidou você para enviar uma proposta para a demanda: " + job.getTitle() + (customMessage != null && !customMessage.isBlank() ? " | Nota: \"" + customMessage + "\"" : ""),
+                "job",
+                jobId
+        );
+
+        return buildResponse(HttpStatus.OK, true, Map.of("invited", true, "jobId", jobId, "lawyerId", lawyerId), null);
     }
 
     private ResponseEntity<ResponseDto> buildResponse(

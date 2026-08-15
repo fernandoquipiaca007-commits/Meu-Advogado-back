@@ -44,7 +44,7 @@ public class NotificationController {
 
     @Operation(summary = "Todas as notificações", description = "Lista todas as notificações do utilizador com paginação",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @GetMapping
+    @GetMapping({"", "/my"})
     public ResponseEntity<ResponseDto> getNotifications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
