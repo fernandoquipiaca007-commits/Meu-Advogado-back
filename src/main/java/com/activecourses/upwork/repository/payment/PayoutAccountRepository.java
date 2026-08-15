@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface PayoutAccountRepository extends JpaRepository<PayoutAccount, Long> {
-    Optional<PayoutAccount> findByUserUserId(Integer userId);
-    boolean existsByUserUserId(Integer userId);
+    Optional<PayoutAccount> findByUserId(Integer userId);
+    boolean existsByUserId(Integer userId);
 }

@@ -49,7 +49,7 @@ public class PayPalPayoutService {
         // TODO: deduct disputed, held amounts when dispute/hold tables are queried
         BigDecimal availableToPayout = ledgerBalance.max(BigDecimal.ZERO);
 
-        boolean hasPayoutAccount = payoutAccountRepository.existsByUserUserId(lawyerId);
+        boolean hasPayoutAccount = payoutAccountRepository.existsByUserId(lawyerId);
         boolean eligible = availableToPayout.compareTo(BigDecimal.ZERO) > 0 && hasPayoutAccount;
 
         String ineligibilityReasons = null;
@@ -77,7 +77,7 @@ public class PayPalPayoutService {
     ) {
         assertPayPalEnabled();
 
-        PayoutAccount account = payoutAccountRepository.findByUserUserId(lawyer.getId())
+        PayoutAccount account = payoutAccountRepository.findByUserId(lawyer.getId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Advogado não possui conta PayPal conectada e validada. " +
                         "Acesse 'Minha Conta' > 'Recebimentos' para conectar sua conta PayPal."));
@@ -151,7 +151,7 @@ public class PayPalPayoutService {
      */
     @Transactional(readOnly = true)
     public List<PayoutRequest> getPayoutHistory(Integer lawyerId) {
-        return payoutRequestRepository.findByLawyerUserIdOrderByCreatedAtDesc(lawyerId);
+        return payoutRequestRepository.findByLawyerIdOrderByCreatedAtDesc(lawyerId);
     }
 
     private void assertPayPalEnabled() {

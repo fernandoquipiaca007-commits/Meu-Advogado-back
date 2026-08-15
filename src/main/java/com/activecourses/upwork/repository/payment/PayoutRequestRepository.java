@@ -12,6 +12,6 @@ public interface PayoutRequestRepository extends JpaRepository<PayoutRequest, Lo
     Optional<PayoutRequest> findBySenderBatchId(String senderBatchId);
     Optional<PayoutRequest> findBySenderItemId(String senderItemId);
     Optional<PayoutRequest> findByPaypalPayoutBatchId(String paypalPayoutBatchId);
-    List<PayoutRequest> findByLawyerUserIdOrderByCreatedAtDesc(Integer lawyerId);
+    List<PayoutRequest> findByLawyerIdOrderByCreatedAtDesc(Integer lawyerId);
     List<PayoutRequest> findByStatus(String status);
 }
