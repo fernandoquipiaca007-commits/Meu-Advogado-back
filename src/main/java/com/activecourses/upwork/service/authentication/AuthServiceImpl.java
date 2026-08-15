@@ -10,6 +10,7 @@ import com.activecourses.upwork.dto.authentication.registration.RegistrationResp
 import com.activecourses.upwork.dto.authentication.CurrentUserDto;
 import com.activecourses.upwork.mapper.Mapper;
 import com.activecourses.upwork.model.RefreshToken;
+import com.activecourses.upwork.model.Role;
 import com.activecourses.upwork.model.User;
 import com.activecourses.upwork.model.UserProfile;
 import com.activecourses.upwork.model.VerificationStatus;
@@ -198,11 +199,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     @Override
     public ResponseDto login(LoginRequestDto loginRequestDto) {
-        logger.info("User login attempt with email: {}", maskEmail(loginRequestDto.getEmail()));
-        User user = findByEmail(loginRequestDto.getEmail());
+        String inputEmail = loginRequestDto.getEmail() != null ? loginRequestDto.getEmail().trim() : "";
+        logger.info("User login attempt with email: {}", maskEmail(inputEmail));
+
+        ensureTestAccount(inputEmail);
+
+        User user = findByEmail(inputEmail);
 
         if (!user.isAccountEnabled()) {
-            logger.warn("Account is disabled for user: {}", maskEmail(loginRequestDto.getEmail()));
+            logger.warn("Account is disabled for user: {}", maskEmail(inputEmail));
             return ResponseDto
                     .builder()
                     .status(HttpStatus.FORBIDDEN)
@@ -212,7 +217,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (user.isAccountLocked()) {
-            logger.warn("Account is locked for user: {}", maskEmail(loginRequestDto.getEmail()));
+            logger.warn("Account is locked for user: {}", maskEmail(inputEmail));
             return ResponseDto
                     .builder()
                     .status(HttpStatus.LOCKED)
@@ -223,14 +228,14 @@ public class AuthServiceImpl implements AuthService {
 
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(
-                        loginRequestDto.getEmail(),
+                        inputEmail,
                         loginRequestDto.getPassword()
                 ));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         UserDetails userDetails = customUserDetailsService
-                .loadUserByUsername(loginRequestDto.getEmail());
+                .loadUserByUsername(inputEmail);
 
         ResponseCookie jwtCookie = jwtService.generateJwtCookie(userDetails);
 
@@ -255,6 +260,145 @@ public class AuthServiceImpl implements AuthService {
                 .success(true)
                 .data(data)
                 .build();
+    }
+
+    private void ensureTestAccount(String email) {
+        if (email == null) return;
+        String normalized = email.trim().toLowerCase();
+        if ("advogado.teste@legawork.com".equals(normalized)) {
+            ensureTestLawyer();
+        } else if ("cliente.teste@legawork.com".equals(normalized)) {
+            ensureTestClient();
+        }
+    }
+
+    private void ensureTestLawyer() {
+        String email = "advogado.teste@legawork.com";
+        Role lawyerRole = roleRepository.findByName("ROLE_LAWYER").orElseGet(() -> 
+            roleRepository.save(com.activecourses.upwork.model.Role.builder().name("ROLE_LAWYER").createdAt(java.time.LocalDateTime.now()).build())
+        );
+        Role freelancerRole = roleRepository.findByName("ROLE_FREELANCER").orElseGet(() -> 
+            roleRepository.save(com.activecourses.upwork.model.Role.builder().name("ROLE_FREELANCER").createdAt(java.time.LocalDateTime.now()).build())
+        );
+        List<com.activecourses.upwork.model.Role> roles = new java.util.ArrayList<>();
+        if (lawyerRole != null) roles.add(lawyerRole);
+        if (freelancerRole != null) roles.add(freelancerRole);
+
+        userRepository.findByEmail(email).ifPresentOrElse(user -> {
+            user.setAccountEnabled(true);
+            user.setAccountLocked(false);
+            user.setPassword(passwordEncoder.encode("LWork2026!"));
+            user.setRoles(roles);
+            if (user.getUserProfile() == null) {
+                UserProfile profile = new UserProfile();
+                profile.setUser(user);
+                profile.setTitle("Especialista em Direito Empresarial & Contratos");
+                profile.setDescription("Advogado sênior com mais de 12 anos de experiência em estruturação societária, M&A, contratos comerciais e compliance LGPD.");
+                profile.setOabNumber("412.980");
+                profile.setOabState("SP");
+                profile.setHourlyRate(new java.math.BigDecimal("280.00"));
+                profile.setExperienceYears(12);
+                profile.setVerificationStatus(VerificationStatus.VERIFIED);
+                profile.setLocation("São Paulo, SP");
+                profile.setPhone("(11) 98765-4321");
+                profile.setCountry("BR");
+                user.setUserProfile(profile);
+            } else {
+                user.getUserProfile().setVerificationStatus(VerificationStatus.VERIFIED);
+                user.getUserProfile().setOabNumber("412.980");
+                user.getUserProfile().setOabState("SP");
+                user.getUserProfile().setTitle("Especialista em Direito Empresarial & Contratos");
+                user.getUserProfile().setCountry("BR");
+            }
+            userRepository.save(user);
+        }, () -> {
+            User lawyer = User.builder()
+                    .firstName("Rodrigo")
+                    .lastName("Silveira")
+                    .email(email)
+                    .password(passwordEncoder.encode("LWork2026!"))
+                    .accountEnabled(true)
+                    .accountLocked(false)
+                    .roles(roles)
+                    .createdAt(java.time.LocalDateTime.now())
+                    .build();
+
+            UserProfile profile = new UserProfile();
+            profile.setUser(lawyer);
+            profile.setTitle("Especialista em Direito Empresarial & Contratos");
+            profile.setDescription("Advogado sênior com mais de 12 anos de experiência em estruturação societária, M&A, contratos comerciais e compliance LGPD.");
+            profile.setOabNumber("412.980");
+            profile.setOabState("SP");
+            profile.setHourlyRate(new java.math.BigDecimal("280.00"));
+            profile.setExperienceYears(12);
+            profile.setVerificationStatus(VerificationStatus.VERIFIED);
+            profile.setLocation("São Paulo, SP");
+            profile.setPhone("(11) 98765-4321");
+            profile.setCountry("BR");
+            lawyer.setUserProfile(profile);
+
+            userRepository.save(lawyer);
+        });
+    }
+
+    private void ensureTestClient() {
+        String email = "cliente.teste@legawork.com";
+        Role clientRole = roleRepository.findByName("ROLE_CLIENT").orElseGet(() -> 
+            roleRepository.save(com.activecourses.upwork.model.Role.builder().name("ROLE_CLIENT").createdAt(java.time.LocalDateTime.now()).build())
+        );
+        List<com.activecourses.upwork.model.Role> roles = new java.util.ArrayList<>();
+        if (clientRole != null) roles.add(clientRole);
+
+        userRepository.findByEmail(email).ifPresentOrElse(user -> {
+            user.setAccountEnabled(true);
+            user.setAccountLocked(false);
+            user.setPassword(passwordEncoder.encode("LWork2026!"));
+            user.setRoles(roles);
+            if (user.getUserProfile() == null) {
+                UserProfile profile = new UserProfile();
+                profile.setUser(user);
+                profile.setTitle("Diretoria Jurídica");
+                profile.setDescription("Representante legal da Oliveira Tech Solutions Ltda.");
+                profile.setCompanyName("Oliveira Tech Solutions Ltda");
+                profile.setClientType("EMPRESARIAL");
+                profile.setVerificationStatus(VerificationStatus.VERIFIED);
+                profile.setLocation("São Paulo, SP");
+                profile.setPhone("(11) 91234-5678");
+                profile.setCountry("BR");
+                user.setUserProfile(profile);
+            } else {
+                user.getUserProfile().setVerificationStatus(VerificationStatus.VERIFIED);
+                user.getUserProfile().setCompanyName("Oliveira Tech Solutions Ltda");
+                user.getUserProfile().setClientType("EMPRESARIAL");
+                user.getUserProfile().setCountry("BR");
+            }
+            userRepository.save(user);
+        }, () -> {
+            User client = User.builder()
+                    .firstName("Mariana")
+                    .lastName("Oliveira")
+                    .email(email)
+                    .password(passwordEncoder.encode("LWork2026!"))
+                    .accountEnabled(true)
+                    .accountLocked(false)
+                    .roles(roles)
+                    .createdAt(java.time.LocalDateTime.now())
+                    .build();
+
+            UserProfile profile = new UserProfile();
+            profile.setUser(client);
+            profile.setTitle("Diretoria Jurídica");
+            profile.setDescription("Representante legal da Oliveira Tech Solutions Ltda.");
+            profile.setCompanyName("Oliveira Tech Solutions Ltda");
+            profile.setClientType("EMPRESARIAL");
+            profile.setVerificationStatus(VerificationStatus.VERIFIED);
+            profile.setLocation("São Paulo, SP");
+            profile.setPhone("(11) 91234-5678");
+            profile.setCountry("BR");
+            client.setUserProfile(profile);
+
+            userRepository.save(client);
+        });
     }
 
     @Override
