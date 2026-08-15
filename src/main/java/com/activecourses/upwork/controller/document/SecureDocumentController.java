@@ -55,7 +55,7 @@ public class SecureDocumentController {
 
     @Operation(summary = "Download de documento seguro", description = "Download protegido com autorização estrita, retorno de cabeçalho X-Document-SHA256 e log de auditoria",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @GetMapping("/{documentId}/download")
+    @GetMapping("/{documentId:\\d+}/download")
     public ResponseEntity<Resource> downloadSecureDocument(
             @PathVariable Long documentId,
             HttpServletRequest request) {
@@ -94,7 +94,7 @@ public class SecureDocumentController {
                 .build());
     }
 
-    @Operation(summary = "Listar meus documentos seguros", description = "Lista todos os documentos seguros pertencentes ao usuÃ¡rio autenticado",
+    @Operation(summary = "Listar meus documentos seguros", description = "Lista todos os documentos seguros pertencentes ao usuário autenticado",
             security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/my")
     public ResponseEntity<ResponseDto> getMyDocuments(HttpServletRequest request) {
@@ -108,7 +108,7 @@ public class SecureDocumentController {
 
     @Operation(summary = "Obter metadados do documento", description = "Retorna metadados do documento seguro",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @GetMapping("/{documentId}")
+    @GetMapping("/{documentId:\\d+}")
     public ResponseEntity<ResponseDto> getDocumentById(@PathVariable Long documentId) {
         return secureDocumentService.getDocumentById(documentId)
                 .map(doc -> ResponseEntity.ok(ResponseDto.builder()
@@ -126,7 +126,7 @@ public class SecureDocumentController {
 
     @Operation(summary = "Excluir documento seguro", description = "Exclui logicamente o documento seguro",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @DeleteMapping("/{documentId}")
+    @DeleteMapping("/{documentId:\\d+}")
     public ResponseEntity<ResponseDto> deleteSecureDocument(
             @PathVariable Long documentId,
             HttpServletRequest request) {
@@ -140,7 +140,7 @@ public class SecureDocumentController {
 
     @Operation(summary = "Logs de acesso do documento", description = "Retorna a trilha forense imutável de acessos ao documento",
             security = @SecurityRequirement(name = "bearerAuth"))
-    @GetMapping("/{documentId}/logs")
+    @GetMapping("/{documentId:\\d+}/logs")
     public ResponseEntity<ResponseDto> getAccessLogs(
             @PathVariable Long documentId,
             HttpServletRequest request) {
