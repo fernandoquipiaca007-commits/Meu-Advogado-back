@@ -35,6 +35,8 @@ public interface SecureDocumentService {
 
     List<SecureDocumentDto> getDocumentsByJob(Integer jobId);
 
+    List<SecureDocumentDto> getMyDocuments(HttpServletRequest request);
+
     Optional<SecureDocumentDto> getDocumentById(Long documentId);
 
     void deleteSecureDocument(Long documentId, HttpServletRequest request);

@@ -237,6 +237,19 @@ public class SecureDocumentServiceImpl implements SecureDocumentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<SecureDocumentDto> getMyDocuments(HttpServletRequest request) {
+        Integer currentUserId = authService.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new AccessDeniedException("NÃ£o autenticado.");
+        }
+
+        return secureDocumentRepository.findByOwnerIdAndIsDeletedFalse(currentUserId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Optional<SecureDocumentDto> getDocumentById(Long documentId) {
         if (documentId == null) return Optional.empty();
 

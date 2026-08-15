@@ -94,6 +94,18 @@ public class SecureDocumentController {
                 .build());
     }
 
+    @Operation(summary = "Listar meus documentos seguros", description = "Lista todos os documentos seguros pertencentes ao usuÃ¡rio autenticado",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/my")
+    public ResponseEntity<ResponseDto> getMyDocuments(HttpServletRequest request) {
+        List<SecureDocumentDto> docs = secureDocumentService.getMyDocuments(request);
+        return ResponseEntity.ok(ResponseDto.builder()
+                .status(HttpStatus.OK)
+                .success(true)
+                .data(docs)
+                .build());
+    }
+
     @Operation(summary = "Obter metadados do documento", description = "Retorna metadados do documento seguro",
             security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/{documentId}")

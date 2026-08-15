@@ -28,6 +28,11 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 55MB
 
 application:
   security:
@@ -40,6 +45,12 @@ application:
         jwt_cookie_name: "${JWT_COOKIE_NAME:jwt_token}"
         jwt_refresh_cookie_name: "${JWT_REFRESH_COOKIE_NAME:jwt_refresh_token}"
         max_age: "${JWT_COOKIE_MAX_AGE:86400}"
+
+app:
+  upload:
+    # On Railway, use /tmp since the container filesystem is ephemeral.
+    # For production persistence, mount a volume and set UPLOAD_DIR to that path.
+    secure-dir: "${UPLOAD_DIR:/tmp/secure_documents/}"
 
 springdoc:
   api-docs:
