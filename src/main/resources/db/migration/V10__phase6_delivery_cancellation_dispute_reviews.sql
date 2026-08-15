@@ -142,37 +142,31 @@ CREATE INDEX IF NOT EXISTS idx_disputes_contract ON disputes(contract_id);
 CREATE INDEX IF NOT EXISTS idx_disputes_status   ON disputes(status);
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 6. reviews — Blind mutual evaluation with moderation
+-- 6. reviews — Enhance existing reviews table with Phase 6 columns
 -- ────────────────────────────────────────────────────────────────────────────
+-- In case reviews table does not exist:
 CREATE TABLE IF NOT EXISTS reviews (
-    id                  BIGSERIAL PRIMARY KEY,
-    contract_id         INTEGER     NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
-    reviewer_id         INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    reviewee_id         INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    -- Score: 1-5, no automatic zero
-    score               INTEGER     NOT NULL CHECK (score BETWEEN 1 AND 5),
-    -- Structured dimensions (all optional)
-    communication_score INTEGER     CHECK (communication_score BETWEEN 1 AND 5),
-    quality_score       INTEGER     CHECK (quality_score BETWEEN 1 AND 5),
-    timeliness_score    INTEGER     CHECK (timeliness_score BETWEEN 1 AND 5),
+    review_id           SERIAL PRIMARY KEY,
+    contract_id         INTEGER       NOT NULL REFERENCES contracts(contract_id) ON DELETE CASCADE,
+    reviewer_id         INTEGER       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reviewee_id         INTEGER       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating              INTEGER       NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment             TEXT,
-    -- Blind reveal control: review is hidden until BOTH submit or deadline passes
-    is_revealed         BOOLEAN     NOT NULL DEFAULT FALSE,
-    submitted_at        TIMESTAMP   NOT NULL DEFAULT NOW(),
-    -- Moderation
-    moderation_status   VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-    moderation_note     TEXT,
-    is_reported         BOOLEAN     NOT NULL DEFAULT FALSE,
-    report_reason       TEXT,
-    -- Visibility
-    is_visible          BOOLEAN     NOT NULL DEFAULT TRUE,
-    CONSTRAINT chk_review_moderation CHECK (
-        moderation_status IN ('PENDING', 'APPROVED', 'REJECTED', 'UNDER_REVIEW')
-    ),
-    -- One review per participant per contract
-    UNIQUE (contract_id, reviewer_id)
+    created_at          TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_reviews_contract  ON reviews(contract_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_reviewee  ON reviews(reviewee_id);
+-- Add Phase 6 enhancements additively:
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS communication_score INTEGER CHECK (communication_score BETWEEN 1 AND 5);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS quality_score       INTEGER CHECK (quality_score BETWEEN 1 AND 5);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS timeliness_score    INTEGER CHECK (timeliness_score BETWEEN 1 AND 5);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS is_revealed         BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS submitted_at        TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS moderation_status   VARCHAR(50) NOT NULL DEFAULT 'PENDING';
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS moderation_note     TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS is_reported         BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS report_reason       TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS is_visible          BOOLEAN NOT NULL DEFAULT TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_reviews_contract   ON reviews(contract_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_reviewee   ON reviews(reviewee_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_moderation ON reviews(moderation_status);
