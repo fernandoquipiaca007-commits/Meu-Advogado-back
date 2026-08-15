@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS deliveries (
     id                  BIGSERIAL PRIMARY KEY,
     contract_id         INTEGER       NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
     milestone_id        INTEGER       REFERENCES contract_milestones(milestone_id) ON DELETE RESTRICT,
-    submitted_by        INTEGER       NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    submitted_by        INTEGER       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     version             INTEGER       NOT NULL DEFAULT 1,
     -- Status lifecycle: SUBMITTED -> CHANGE_REQUESTED | ACCEPTED
     status              VARCHAR(50)   NOT NULL DEFAULT 'SUBMITTED',
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS deliveries (
     client_viewed_at    TIMESTAMP,
     change_request_reason TEXT,
     accepted_at         TIMESTAMP,
-    accepted_by         INTEGER       REFERENCES users(user_id) ON DELETE SET NULL,
+    accepted_by         INTEGER       REFERENCES users(id) ON DELETE SET NULL,
     created_at          TIMESTAMP     NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP     NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_delivery_status CHECK (
@@ -38,11 +38,11 @@ CREATE TABLE IF NOT EXISTS contract_addenda (
     id              BIGSERIAL PRIMARY KEY,
     contract_id     INTEGER     NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
     version         INTEGER     NOT NULL DEFAULT 1,
-    proposed_by     INTEGER     NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    proposed_by     INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     description     TEXT        NOT NULL,
     changes_summary TEXT,
     status          VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-    reviewed_by     INTEGER     REFERENCES users(user_id) ON DELETE SET NULL,
+    reviewed_by     INTEGER     REFERENCES users(id) ON DELETE SET NULL,
     reviewed_at     TIMESTAMP,
     created_at      TIMESTAMP   NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_addendum_status CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED'))
@@ -56,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_addenda_contract ON contract_addenda(contract_id)
 CREATE TABLE IF NOT EXISTS cancellation_requests (
     id                      BIGSERIAL PRIMARY KEY,
     contract_id             INTEGER     NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
-    initiated_by            INTEGER     NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    initiated_by            INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     -- Categorized reason: CLIENT_REQUEST, LAWYER_WITHDRAWAL, MUTUAL_AGREEMENT, BREACH, FORCE_MAJEURE
     reason_category         VARCHAR(100) NOT NULL,
     reason_detail           TEXT,
@@ -93,7 +93,7 @@ CREATE INDEX IF NOT EXISTS idx_cancel_status   ON cancellation_requests(status);
 CREATE TABLE IF NOT EXISTS lawyer_withdrawals (
     id                      BIGSERIAL PRIMARY KEY,
     contract_id             INTEGER     NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
-    lawyer_id               INTEGER     NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    lawyer_id               INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     urgency_checked         BOOLEAN     NOT NULL DEFAULT FALSE,
     deadline_checked        BOOLEAN     NOT NULL DEFAULT FALSE,
     handoff_completed       BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -117,7 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_withdrawals_lawyer   ON lawyer_withdrawals(lawyer
 CREATE TABLE IF NOT EXISTS disputes (
     id                  BIGSERIAL PRIMARY KEY,
     contract_id         INTEGER     NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
-    opened_by           INTEGER     NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    opened_by           INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     reason_category     VARCHAR(100) NOT NULL,
     description         TEXT        NOT NULL,
     -- Evidence references (links to secure_documents or delivery records)
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS disputes (
     status              VARCHAR(50) NOT NULL DEFAULT 'OPEN',
     decision            VARCHAR(100),
     decision_reason     TEXT,
-    decided_by          INTEGER     REFERENCES users(user_id) ON DELETE SET NULL,
+    decided_by          INTEGER     REFERENCES users(id) ON DELETE SET NULL,
     decided_at          TIMESTAMP,
     external_channel_url TEXT,
     created_at          TIMESTAMP   NOT NULL DEFAULT NOW(),
@@ -147,8 +147,8 @@ CREATE INDEX IF NOT EXISTS idx_disputes_status   ON disputes(status);
 CREATE TABLE IF NOT EXISTS reviews (
     id                  BIGSERIAL PRIMARY KEY,
     contract_id         INTEGER     NOT NULL REFERENCES contracts(contract_id) ON DELETE RESTRICT,
-    reviewer_id         INTEGER     NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
-    reviewee_id         INTEGER     NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    reviewer_id         INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    reviewee_id         INTEGER     NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     -- Score: 1-5, no automatic zero
     score               INTEGER     NOT NULL CHECK (score BETWEEN 1 AND 5),
     -- Structured dimensions (all optional)

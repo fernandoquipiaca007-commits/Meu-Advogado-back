@@ -8,12 +8,12 @@ CREATE TABLE IF NOT EXISTS security_alerts (
     id              BIGSERIAL PRIMARY KEY,
     alert_type      VARCHAR(100) NOT NULL,  -- SUSPICIOUS_LOGIN, IDOR_ATTEMPT, RATE_LIMIT_EXCEEDED, etc.
     severity        VARCHAR(20)  NOT NULL DEFAULT 'MEDIUM',
-    actor_id        INTEGER      REFERENCES users(user_id) ON DELETE SET NULL,
+    actor_id        INTEGER      REFERENCES users(id) ON DELETE SET NULL,
     ip_address      VARCHAR(50),
     endpoint        VARCHAR(500),
     details         TEXT,
     resolved        BOOLEAN      NOT NULL DEFAULT FALSE,
-    resolved_by     INTEGER      REFERENCES users(user_id) ON DELETE SET NULL,
+    resolved_by     INTEGER      REFERENCES users(id) ON DELETE SET NULL,
     resolved_at     TIMESTAMP,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_alert_severity CHECK (severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'))

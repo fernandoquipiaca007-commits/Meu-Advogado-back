@@ -6,7 +6,7 @@
 -- ────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payout_accounts (
     id                  BIGSERIAL PRIMARY KEY,
-    user_id             INTEGER       NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE RESTRICT,
+    user_id             INTEGER       NOT NULL UNIQUE REFERENCES users(id) ON DELETE RESTRICT,
     provider            VARCHAR(50)   NOT NULL DEFAULT 'PAYPAL',
     -- PayPal Payer ID (preferred) or masked email — never store plaintext email as primary key
     paypal_payer_id     VARCHAR(255),
@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_payout_accounts_status ON payout_accounts(status)
 -- ────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payout_requests (
     id                      BIGSERIAL PRIMARY KEY,
-    lawyer_id               INTEGER       NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    lawyer_id               INTEGER       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     payout_account_id       BIGINT        NOT NULL REFERENCES payout_accounts(id) ON DELETE RESTRICT,
     contract_id             INTEGER       REFERENCES contracts(contract_id) ON DELETE RESTRICT,
     ledger_entry_id         BIGINT        REFERENCES ledger_entries(id) ON DELETE RESTRICT,
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS payout_requests (
     status                  VARCHAR(50)   NOT NULL DEFAULT 'PENDING',
     failure_reason          VARCHAR(500),
     -- Approval chain (MFA + dual approval for manual operations)
-    requested_by            INTEGER       REFERENCES users(user_id) ON DELETE SET NULL,
-    approved_by             INTEGER       REFERENCES users(user_id) ON DELETE SET NULL,
+    requested_by            INTEGER       REFERENCES users(id) ON DELETE SET NULL,
+    approved_by             INTEGER       REFERENCES users(id) ON DELETE SET NULL,
     approved_at             TIMESTAMP,
     -- Timestamps
     created_at              TIMESTAMP     NOT NULL DEFAULT NOW(),
@@ -73,7 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_payout_requests_paypal_batch ON payout_requests(p
 -- ────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payout_eligibility_snapshots (
     id                  BIGSERIAL PRIMARY KEY,
-    lawyer_id           INTEGER       NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    lawyer_id           INTEGER       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     contract_id         INTEGER       REFERENCES contracts(contract_id) ON DELETE SET NULL,
     ledger_balance      DECIMAL(15,2) NOT NULL DEFAULT 0,
     held_balance        DECIMAL(15,2) NOT NULL DEFAULT 0,

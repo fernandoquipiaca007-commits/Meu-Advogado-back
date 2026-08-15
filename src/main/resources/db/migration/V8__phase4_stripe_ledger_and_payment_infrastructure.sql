@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS payment_intents (
     currency                 VARCHAR(10)   NOT NULL DEFAULT 'BRL',
     status                   VARCHAR(50)   NOT NULL DEFAULT 'PENDING_FUNDING',
     idempotency_key          VARCHAR(255)  NOT NULL UNIQUE,
-    client_id                INTEGER       NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    client_id                INTEGER       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     metadata                 TEXT,
     created_at               TIMESTAMP     NOT NULL DEFAULT NOW(),
     updated_at               TIMESTAMP     NOT NULL DEFAULT NOW()
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
     source              VARCHAR(100),
     provider_reference  VARCHAR(255),
     correlation_id      VARCHAR(255),
-    actor_id            INTEGER       REFERENCES users(user_id) ON DELETE SET NULL,
+    actor_id            INTEGER       REFERENCES users(id) ON DELETE SET NULL,
     occurred_at         TIMESTAMP     NOT NULL DEFAULT NOW(),
     reverses_entry_id   BIGINT        REFERENCES ledger_entries(id) ON DELETE RESTRICT
 );
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS refunds (
     reason              VARCHAR(255),
     status              VARCHAR(50)   NOT NULL DEFAULT 'PENDING',
     idempotency_key     VARCHAR(255)  NOT NULL UNIQUE,
-    approved_by         INTEGER       REFERENCES users(user_id) ON DELETE SET NULL,
+    approved_by         INTEGER       REFERENCES users(id) ON DELETE SET NULL,
     created_at          TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
